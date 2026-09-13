@@ -19,12 +19,6 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 }) => {
   return (
     <div className="@container/calendar w-full min-w-0 space-y-1.5">
-      {/* Subheader specifying the noon snapshot convention and active timezone */}
-      <div className="flex flex-col gap-0.5 @min-[36rem]/calendar:flex-row @min-[36rem]/calendar:items-center @min-[36rem]/calendar:justify-between text-[10px] @min-[36rem]/calendar:text-[11px] font-sans-almanac text-[#657367] px-1 py-0.5">
-        <span className="@min-[36rem]/calendar:whitespace-nowrap">Daily Moon sign &amp; phase snapshot: <strong className="text-[#182421] font-medium">12:00:00 (Noon Local Time)</strong></span>
-        <span className="font-mono text-[#657367] break-words">Zone: {filters.timezone}</span>
-      </div>
-
       {/* Weekday Column Headers */}
       <div className="grid grid-cols-7 border-b border-[#D8D0BF] bg-[#EBE3D0] text-center text-[10px] @min-[36rem]/calendar:text-xs font-serif-almanac font-semibold uppercase tracking-wider @min-[36rem]/calendar:tracking-widest text-[#182421] py-1.5 @min-[36rem]/calendar:py-2 rounded-t-md">
         {WEEKDAYS.map((day, idx) => (
@@ -84,7 +78,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                   onSelectDay(day);
                 }
               }}
-              className={`min-h-[80px] @min-[36rem]/calendar:min-h-[136px] p-1 @min-[36rem]/calendar:p-2.5 flex flex-col justify-between @min-[36rem]/calendar:justify-start gap-0.5 @min-[36rem]/calendar:gap-1 transition-all duration-150 cursor-pointer select-none group relative ${
+              className={`min-h-[80px] @min-[36rem]/calendar:min-h-[136px] p-1 @min-[36rem]/calendar:p-2.5 flex flex-col justify-start gap-0.5 @min-[36rem]/calendar:gap-1 transition-all duration-150 cursor-pointer select-none group relative ${
                 isDimmed
                   ? 'bg-[#EAE3D2]/70 text-[#657367]/60 hover:bg-[#E3DCB8]'
                   : day.isToday
@@ -101,7 +95,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               }`}
             >
               {/* Top Row: Date numeral, Today badge, Major phase indicator */}
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex h-6 @min-[36rem]/calendar:h-7 shrink-0 items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`font-serif-almanac text-sm @min-[36rem]/calendar:text-lg font-semibold tracking-tight ${

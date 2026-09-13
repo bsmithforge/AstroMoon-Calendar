@@ -155,6 +155,15 @@ export function App() {
     filters.timezone,
   ]);
 
+  const snapshotRangeLabel = useMemo(() => {
+    const first = calendarMonths[0].days.find((day) => day.isCurrentMonth)!;
+    const last = [...calendarMonths[calendarMonths.length - 1].days]
+      .reverse().find((day) => day.isCurrentMonth)!;
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric', timeZone: filters.timezone,
+    }).formatRange(first.date, last.date);
+  }, [calendarMonths, filters.timezone]);
+
   // Timeline / Multi-month dataset
   const timelineDataset = useMemo(() => {
     let start = filters.startDate;
@@ -248,6 +257,11 @@ export function App() {
                 </span>
               </div>
             </div>
+
+            <p className="text-[11px] leading-relaxed text-[#657367] break-words">
+              Daily Moon sign &amp; phase snapshots: <strong className="font-medium text-[#182421]">{snapshotRangeLabel}, at 12:00:00 noon each day</strong>
+              {' '}· {filters.timezone}.
+            </p>
 
             {/* One 7-column grid per month in the selected range */}
             <div className="space-y-6">
