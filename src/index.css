@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+:root {
+  --parchment: #F3EDDF;
+  --observatory-ink: #182421;
+  --vermilion: #B44732;
+  --antique-brass: #B89A62;
+  --weathered-sage: #657367;
+  --paper-edge: #D8D0BF;
+}
+
+.font-serif-almanac {
+  font-family: 'Newsreader', 'Cormorant Garamond', Georgia, serif;
+  font-feature-settings: "liga" 1, "calt" 1;
+}
+
+.font-cinzel {
+  font-family: 'Cinzel', serif;
+}
+
+.font-sans-almanac {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Subtle paper texture noise pattern simulation */
+.bg-parchment {
+  background-color: #F3EDDF;
+}
+
+.bg-observatory {
+  background-color: #182421;
+}
+
+/* Explicit SVG & Lucide icon baseline rules to prevent collapsing, squishing, or distortion */
+svg,
+svg.lucide,
+.lucide {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0 !important;
+  shape-rendering: geometricPrecision;
+}
+
+header svg.lucide,
+header svg {
+  flex-shrink: 0 !important;
+}
+
+/* Ensure buttons with icons maintain proper alignment and prevent text wrapping defects */
+button {
+  white-space: nowrap;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #182421 !important;
+  }
+
+  header,
+  #mobile-info-btn,
+  #desktop-info-btn,
+  #open-export-btn,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Optimize calendar grid for print */
+  [id^="day-card-"] {
+    background-color: #ffffff !important;
+    border-color: #D8D0BF !important;
+    color: #182421 !important;
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  [id^="day-card-"] span,
+  [id^="day-card-"] p {
+    color: #182421 !important;
+  }
+}
+
+
