@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Calendar as CalendarIcon,
   Download,
@@ -31,6 +31,26 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenInfoModal,
   onOpenMethodologyModal,
 }) => {
+  const learnMenuRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    const dismissLearnMenu = (event: Event) => {
+      const menu = learnMenuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) {
+        menu.open = false;
+      }
+    };
+
+    // Touch activation can blur the summary without focusing the tapped button.
+    // Wait for an actual outside target instead of closing on that blur.
+    document.addEventListener('pointerdown', dismissLearnMenu);
+    document.addEventListener('focusin', dismissLearnMenu);
+    return () => {
+      document.removeEventListener('pointerdown', dismissLearnMenu);
+      document.removeEventListener('focusin', dismissLearnMenu);
+    };
+  }, []);
+
   // Calculate real-time instantaneous Moon at the current instant
   const liveMoon = useMemo(() => {
     const now = new Date();
@@ -108,8 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
             ))}
           </nav>
 
-          <details className="relative group self-center"
-            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.removeAttribute('open'); }}
+          <details ref={learnMenuRef} className="relative group self-center"
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
                 event.preventDefault();
