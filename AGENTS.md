@@ -27,7 +27,7 @@ The app needs no API keys or `.env` file to run. The `@/` alias resolves to the 
 
 The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless functions in `api/`), with the repository on **GitHub**. Pushes to `main` deploy. Keep implementation choices appropriate to a free-tier budget.
 
-- `api/` holds Vercel Node functions using the Web-standard `Request`/`Response` signature. During `npm run dev`, the plugin in `vite.config.ts` mounts them at the same paths, so `/api/calendar` works locally without `vercel dev`. `vite preview` does not serve them.
+- `api/` holds Vercel Node functions using the Web-standard `Request`/`Response` signature. Vercel compiles them with tsc and runs native Node ESM, so every relative import reachable from `api/` must carry an explicit `.js` extension (`tests/apiRuntime.test.ts` guards this). During `npm run dev`, the plugin in `vite.config.ts` mounts them at the same paths, so `/api/calendar` works locally without `vercel dev`. `vite preview` does not serve them.
 
 - Prefer small improvements within the current browser-based React/Vite architecture. Keep infrastructure, dependencies, and ongoing maintenance modest; introduce services or major architectural changes only when the requested feature warrants them.
 - Keep ordinary calendar calculations and exports local to the browser. Avoid adding paid APIs, databases, background services, or another hosting platform as incidental requirements.

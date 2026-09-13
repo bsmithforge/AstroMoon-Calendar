@@ -23,8 +23,8 @@ import {
   Hemisphere,
   MoonPhaseInfo,
   ZodiacSignInfo,
-} from '../types';
-import { getZodiacSignFromLongitude, ZODIAC_SIGNS } from './zodiac';
+} from '../types.js';
+import { getZodiacSignFromLongitude, ZODIAC_SIGNS } from './zodiac.js';
 
 /**
  * Normalizes an angle into [0, 360)

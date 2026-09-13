@@ -11,7 +11,7 @@
  * runtime; the same export is mounted by the Vite dev server in vite.config.ts.
  */
 
-import { buildSubscriptionIcs, parseSubscriptionQuery } from '../src/utils/subscription';
+import { buildSubscriptionIcs, parseSubscriptionQuery } from '../src/utils/subscription.js';
 
 // Vercel's edge cache serves repeat fetches of the same URL for a day; the
 // window is computed per UTC day so a longer cache would lag it anyway.
