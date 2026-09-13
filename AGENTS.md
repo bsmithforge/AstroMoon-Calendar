@@ -18,13 +18,15 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 | `bun run build` | Build the static app into `dist/` |
 | `bun run preview` | Serve the built app locally |
 
-The scripts also work through `npm run` once dependencies are installed. Focused ICS regression tests run with `node --import tsx --test tests/icsExport.test.ts`. There is currently no package test script, formatter configuration, or CI workflow. A successful Vite build does not replace the separate type check.
+The scripts also work through `npm run` once dependencies are installed. Focused regression tests run with `node --import tsx --test tests/*.test.ts` (ICS serialization and the subscription feed). There is currently no package test script, formatter configuration, or CI workflow. A successful Vite build does not replace the separate type check.
 
 The app currently needs no API keys or `.env` file to run. `GEMINI_API_KEY`, `APP_URL`, and `VITE_CANONICAL_URL` are not consumed by the current app/config. `DISABLE_HMR=true` controls Vite HMR and file watching; preserve that behavior. The `@/` alias resolves to the repository root, not `src/`.
 
 ## Hosting and GitHub workflow
 
-The owner describes the hosting environment as a **free-tier Google AI Studio project**, synced with this repository through **GitHub**. Keep implementation choices appropriate to that budget and existing workflow.
+The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless functions in `api/`), with the repository on **GitHub**. It was originally built in Google AI Studio, so the AI Studio-compatible scripts and env handling remain. Keep implementation choices appropriate to a free-tier budget.
+
+- `api/` holds Vercel Node functions using the Web-standard `Request`/`Response` signature. During `bun run dev`, the plugin in `vite.config.ts` mounts them at the same paths, so `/api/calendar` works locally without `vercel dev`. `vite preview` does not serve them.
 
 - Prefer small improvements within the current browser-based React/Vite architecture. Keep infrastructure, dependencies, and ongoing maintenance modest; introduce services or major architectural changes only when the requested feature warrants them.
 - Keep ordinary calendar calculations and exports local to the browser. Avoid adding paid APIs, recurring AI calls, databases, background services, or another hosting platform as incidental requirements.
@@ -49,6 +51,8 @@ The owner describes the hosting environment as a **free-tier Google AI Studio pr
 | `src/components/DayDetailModal.tsx` | Noon snapshot, exact events, single-day ICS download |
 | `src/components/ExportModal.tsx` | Export ranges/toggles, downloads, off-screen calendar capture |
 | `src/utils/icsExport.ts` | ICS serialization and browser download |
+| `src/utils/subscription.ts` | Webcal feed contract: query parsing/building, rolling window, feed payload, add-to-calendar links |
+| `api/calendar.ts` | Vercel serverless function serving the live subscription feed (`GET /api/calendar`) |
 | `src/utils/icsFormatting.ts` | Shared ICS titles and multiline notes, selected-timezone labels, hemisphere-aware quarter emojis |
 | `src/utils/pdfExport.ts` | Vector data-table PDF and image-based calendar PDF |
 | `src/components/MoonVisual.tsx` | SVG illumination geometry and hemisphere orientation |
@@ -76,6 +80,7 @@ Treat the exported files as user-facing deliverables. Changes to dates, filters,
 | Export path | Current flow |
 | --- | --- |
 | Range ICS | `ExportModal` local dates/toggles → `generateRangeDataset()` → `filterAstroRecords()` → `generateIcsPayload()` → Blob/object URL download |
+| Live subscription | `ExportModal` toggles/timezone → `buildSubscriptionUrl()` → user subscribes to `webcal://…/api/calendar?…` → `api/calendar.ts` → `buildSubscriptionIcs()` (rolling window, day-pinned DTSTAMP, `REFRESH-INTERVAL`) → edge-cached `text/calendar` |
 | Single-day ICS | `DayDetailModal` → all `day.events` (daily-summary fallback) → the same ICS serializer/download helper |
 | Data-table PDF | The same filtered range records as range ICS → dynamically imported `generatePdfDocument()` → jsPDF `save()` |
 | Calendar PDF (default PDF mode) | Months spanned by export dates → `generateMonthData()` → off-screen `CalendarGrid` with export toggles → PNG captures → `generateCalendarPdf()` → jsPDF `save()` |
