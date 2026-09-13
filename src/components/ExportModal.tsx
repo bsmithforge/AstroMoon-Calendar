@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Calendar as CalendarIcon,
   FileText,
@@ -23,15 +23,16 @@ interface ExportModalProps {
   onClose: () => void;
 }
 
-export const ExportModal: React.FC<ExportModalProps> = ({
-  isOpen,
+export const ExportModal: React.FC<ExportModalProps> = (props) =>
+  props.isOpen ? <ExportModalContent {...props} /> : null;
+
+// Mount a fresh form on each open; hooks always run in the same order.
+const ExportModalContent: React.FC<ExportModalProps> = ({
   filters,
   currentYear,
   currentMonth,
   onClose,
 }) => {
-  if (!isOpen) return null;
-
   const defaultStart =
     filters.startDate ||
     `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
@@ -65,6 +66,41 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [pdfMode, setPdfMode] = useState<'calendar' | 'table'>('calendar');
   const [isExporting, setIsExporting] = useState(false);
   const captureRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const busyRef = useRef(false);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialogRef.current?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busyRef.current) closeRef.current();
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]'
+      ) || []);
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (!first) {
+        event.preventDefault();
+      } else if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, []);
 
   // Filters applied to the off-screen calendar grids used for image capture
   const exportFilters = useMemo(
@@ -88,35 +124,44 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     ]
   );
 
-  // One dataset per whole month spanned by the selected range (capped for safety)
-  const exportMonths = useMemo(() => {
-    const parse = (s: string) => {
-      const [y, mo] = s.split('-').map(Number);
-      return { y, m: (mo || 1) - 1 };
-    };
-    const a = parse(startDate);
-    const b = parse(endDate);
-    const list: { year: number; month: number }[] = [];
-    let y = a.y;
-    let mo = a.m;
-    while ((y < b.y || (y === b.y && mo <= b.m)) && list.length < 24) {
-      list.push({ year: y, month: mo });
-      mo += 1;
-      if (mo > 11) {
-        mo = 0;
-        y += 1;
-      }
+  const validDate = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const date = new Date(`${value}T12:00:00Z`);
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  };
+  const rangeError = !validDate(startDate) || !validDate(endDate)
+    ? 'Enter a valid start and end date.'
+    : startDate > endDate
+    ? 'End date must be on or after start date.'
+    : null;
+  const [startYear, startMonth] = startDate.split('-').map(Number);
+  const [endYear, endMonth] = endDate.split('-').map(Number);
+  const monthCount = (endYear - startYear) * 12 + endMonth - startMonth + 1;
+  const calendarError = rangeError || (monthCount > 24 ? 'Calendar PDFs support up to 24 whole months. Choose a shorter range.' : null);
+  const recordRangeError = rangeError || (
+    (Date.parse(`${endDate}T12:00:00Z`) - Date.parse(`${startDate}T12:00:00Z`)) / 86400000 >= 3660
+      ? 'ICS and data-table exports support up to 3,660 days per download. Choose a shorter range.' : null
+  );
+
+  // Validate before computing grids, including partially edited date fields.
+  const { exportMonths, calculationError } = useMemo(() => {
+    if (calendarError) return { exportMonths: [], calculationError: null };
+    try {
+      const months = Array.from({ length: monthCount }, (_, index) => {
+        const offset = startMonth - 1 + index;
+        const year = startYear + Math.floor(offset / 12);
+        const month = offset % 12;
+        return {
+          key: `${year}-${month}`,
+          label: new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          days: generateMonthData(year, month, filters.hemisphere, filters.timezone),
+        };
+      });
+      return { exportMonths: months, calculationError: null };
+    } catch {
+      return { exportMonths: [], calculationError: 'Unable to calculate this calendar. Try another date range or timezone.' };
     }
-    if (list.length === 0) list.push({ year: a.y, month: a.m });
-    return list.map(({ year, month }) => ({
-      key: `${year}-${month}`,
-      label: new Date(year, month).toLocaleDateString('en-US', {
-        month: 'long',
-        year: 'numeric',
-      }),
-      days: generateMonthData(year, month, filters.hemisphere, filters.timezone),
-    }));
-  }, [startDate, endDate, filters.hemisphere, filters.timezone]);
+  }, [calendarError, monthCount, startYear, startMonth, filters.hemisphere, filters.timezone]);
 
   const handleRangePreset = (
     type: 'currentMonth' | 'next3Months' | 'fullYear'
@@ -147,6 +192,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   // Generate shared filtered records for export
   const getFilteredExportRecords = () => {
+    if (recordRangeError) throw new Error(recordRangeError);
     const { records } = generateRangeDataset(
       startDate,
       endDate,
@@ -166,6 +212,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handleDownloadIcs = () => {
+    if (isExporting || recordRangeError) return;
     try {
       const exportRecords = getFilteredExportRecords();
       if (exportRecords.length === 0) {
@@ -184,7 +231,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       downloadIcsFile(filename, icsString);
 
       setDownloadSuccess(
-        `Successfully exported ${exportRecords.length} events to .ics calendar!`
+        `Download started: ${exportRecords.length} events in an .ics calendar.`
       );
       setTimeout(() => setDownloadSuccess(null), 5000);
     } catch (err) {
@@ -228,6 +275,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       cacheBust: true,
       skipFonts: true,
     };
+    await document.fonts.ready;
     // Warm-up render so fonts/SVG are ready before the real captures
     await toPng(nodes[0], opts);
 
@@ -257,6 +305,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handleDownloadPdf = async () => {
+    if (busyRef.current || (pdfMode === 'calendar' ? calendarError || calculationError : recordRangeError)) return;
+    busyRef.current = true;
+    setDownloadSuccess(null);
     setIsExporting(true);
     try {
       if (pdfMode === 'table') {
@@ -269,6 +320,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       console.error(err);
       alert('Error generating PDF. Please check the console for details.');
     } finally {
+      busyRef.current = false;
       setIsExporting(false);
     }
   };
@@ -276,16 +328,22 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   return (
     <div
       id="export-modal-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#182421]/80 backdrop-blur-sm animate-fade-in"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#182421]/80 backdrop-blur-sm animate-fade-in"
+      onClick={() => { if (!isExporting) onClose(); }}
     >
       <div
         id="export-modal-card"
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-modal-title"
+        aria-busy={isExporting}
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#FAF7F0] border border-[#D8D0BF] rounded-lg w-full max-w-xl overflow-hidden shadow-2xl text-[#182421] max-h-[90vh] flex flex-col font-sans-almanac animate-fade-in"
+        className="bg-[#FAF7F0] border border-[#D8D0BF] rounded-lg w-full max-w-xl overflow-hidden shadow-2xl text-[#182421] max-h-[calc(100dvh-2rem)] flex flex-col font-sans-almanac animate-fade-in"
       >
         {/* Modal Header in Observatory Ink */}
-        <div className="relative p-5 sm:p-6 bg-[#182421] text-[#F3EDDF] border-b border-[#B89A62]/40 flex items-start justify-between overflow-hidden">
+        <div className="relative shrink-0 p-4 sm:p-6 bg-[#182421] text-[#F3EDDF] border-b border-[#B89A62]/40 flex items-start justify-between overflow-hidden">
           <div className="relative z-10 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full border border-[#B89A62]/60 overflow-hidden bg-[#121A18] flex items-center justify-center p-0.5 shrink-0">
               <img
@@ -296,7 +354,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               />
             </div>
             <div>
-              <h3 className="text-xl font-serif-almanac font-bold text-[#F3EDDF] tracking-tight">
+              <h3 id="export-modal-title" className="text-xl font-serif-almanac font-bold text-[#F3EDDF] tracking-tight">
                 Export Lunar Almanac
               </h3>
               <p className="text-xs text-[#D8D0BF] font-sans-almanac mt-0.5">
@@ -307,15 +365,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
           <button
             id="close-export-modal-btn"
-            onClick={onClose}
-            className="relative z-10 p-1.5 rounded-md text-[#D8D0BF] hover:text-[#F3EDDF] hover:bg-[#253631] transition shrink-0"
+            aria-label="Close export dialog"
+            disabled={isExporting}
+            onClick={() => { if (!isExporting) onClose(); }}
+            className="relative z-10 min-w-11 min-h-11 p-1.5 rounded-md text-[#D8D0BF] hover:text-[#F3EDDF] hover:bg-[#253631] transition shrink-0"
           >
             <X size={20} strokeWidth={2} className="w-5 h-5 shrink-0" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-5 sm:p-6 space-y-5 overflow-y-auto bg-[#FAF7F0]">
+        <div className="min-h-0 overflow-y-auto overscroll-contain">
+        <fieldset disabled={isExporting} className="min-w-0 p-4 sm:p-6 space-y-5 bg-[#FAF7F0]">
           {/* Calendar Compatibility Notice */}
           <div className="p-3.5 rounded-md bg-[#EBE3D0] border border-[#D8D0BF] flex items-start gap-2.5 text-xs text-[#182421]">
             <AlertCircle size={16} strokeWidth={2} className="w-4 h-4 text-[#B89A62] shrink-0 mt-0.5" />
@@ -328,9 +389,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <div className="space-y-2.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="text-xs font-serif-almanac font-semibold uppercase tracking-wider text-[#182421]">
-                Export Date Range ({filters.timezone})
+                Export Date Range
               </label>
-              <div className="flex items-center gap-1 text-xs">
+              <div className="grid grid-cols-3 gap-1 text-xs [&>button]:min-h-11">
                 <button
                   type="button"
                   onClick={() => handleRangePreset('currentMonth')}
@@ -367,9 +428,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[375px]:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] text-[#657367] mb-1">
+                <label htmlFor="export-start-date" className="block text-[11px] text-[#657367] mb-1">
                   Start Date
                 </label>
                 <input
@@ -380,12 +441,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setStartDate(e.target.value);
                     setActivePreset('custom');
                   }}
-                  className="w-full bg-[#FAF6EE] border border-[#D8D0BF] rounded-md px-3 py-2 text-xs text-[#182421] focus:outline-none focus:border-[#182421] font-mono"
+                  className="w-full min-w-0 min-h-11 bg-[#FAF6EE] border border-[#D8D0BF] rounded-md px-3 py-2 text-base text-[#182421] focus:outline-none focus:border-[#182421] font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-[#657367] mb-1">
+                <label htmlFor="export-end-date" className="block text-[11px] text-[#657367] mb-1">
                   End Date
                 </label>
                 <input
@@ -396,7 +457,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     setEndDate(e.target.value);
                     setActivePreset('custom');
                   }}
-                  className="w-full bg-[#FAF6EE] border border-[#D8D0BF] rounded-md px-3 py-2 text-xs text-[#182421] focus:outline-none focus:border-[#182421] font-mono"
+                  className="w-full min-w-0 min-h-11 bg-[#FAF6EE] border border-[#D8D0BF] rounded-md px-3 py-2 text-base text-[#182421] focus:outline-none focus:border-[#182421] font-mono"
                 />
               </div>
             </div>
@@ -408,42 +469,42 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               Included Astronomical Events
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <label className="flex items-center gap-2 p-2.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:border-[#182421] cursor-pointer">
+              <label className="flex min-h-11 items-center gap-2 p-2.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:border-[#182421] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={includeMajorPhases}
                   onChange={(e) => setIncludeMajorPhases(e.target.checked)}
-                  className="rounded border-[#D8D0BF] text-[#B44732] focus:ring-0 bg-white cursor-pointer"
+                  className="w-4 h-4 shrink-0 rounded border-[#D8D0BF] text-[#B44732] focus:ring-0 bg-white cursor-pointer"
                 />
                 <span>Exact Moon Phases (New, Full, Quarters)</span>
               </label>
 
-              <label className="flex items-center gap-2 p-2.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:border-[#182421] cursor-pointer">
+              <label className="flex min-h-11 items-center gap-2 p-2.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:border-[#182421] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={includeIngresses}
                   onChange={(e) => setIncludeIngresses(e.target.checked)}
-                  className="rounded border-[#D8D0BF] text-[#657367] focus:ring-0 bg-white cursor-pointer"
+                  className="w-4 h-4 shrink-0 rounded border-[#D8D0BF] text-[#657367] focus:ring-0 bg-white cursor-pointer"
                 />
                 <span>Zodiac Ingress Transitions</span>
               </label>
 
-              <label className="flex items-center gap-2 p-2.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:border-[#182421] cursor-pointer">
+              <label className="flex min-h-11 items-center gap-2 p-2.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:border-[#182421] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={includeDailySigns}
                   onChange={(e) => setIncludeDailySigns(e.target.checked)}
-                  className="rounded border-[#D8D0BF] text-[#182421] focus:ring-0 bg-white cursor-pointer"
+                  className="w-4 h-4 shrink-0 rounded border-[#D8D0BF] text-[#182421] focus:ring-0 bg-white cursor-pointer"
                 />
                 <span>Daily Noon Sign Snapshot</span>
               </label>
 
-              <label className="flex items-center gap-2 p-2.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:border-[#182421] cursor-pointer">
+              <label className="flex min-h-11 items-center gap-2 p-2.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:border-[#182421] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={includeEclipses}
                   onChange={(e) => setIncludeEclipses(e.target.checked)}
-                  className="rounded border-[#D8D0BF] text-[#B44732] focus:ring-0 bg-white cursor-pointer"
+                  className="w-4 h-4 shrink-0 rounded border-[#D8D0BF] text-[#B44732] focus:ring-0 bg-white cursor-pointer"
                 />
                 <span>Global Solar &amp; Lunar Eclipses</span>
               </label>
@@ -459,7 +520,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           )}
 
           {/* PDF layout selector */}
-          <div className="flex items-center gap-2 pt-1 text-xs">
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs [&_button]:min-h-11">
             <span className="text-[#657367] font-medium">PDF layout:</span>
             <div className="inline-flex rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-0.5 shadow-xs">
               <button
@@ -487,12 +548,25 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
           </div>
 
+          <p className="text-xs leading-relaxed text-[#657367]">
+            {pdfMode === 'calendar'
+              ? 'Calendar PDF includes every whole month touched by your dates, one per A4 page (maximum 24 months). It always uses the full desktop layout.'
+              : 'Data-table PDF includes events within your selected dates. ICS and data-table exports support up to 3,660 days per download.'}
+            {' '}Moon orientation: {filters.hemisphere} hemisphere.
+          </p>
+          {(rangeError || recordRangeError || (pdfMode === 'calendar' && (calendarError || calculationError))) && (
+            <p role="alert" className="rounded-md border border-[#B44732]/40 p-3 text-sm text-[#B44732]">
+              {rangeError || recordRangeError || calendarError || calculationError}
+            </p>
+          )}
+
           {/* Export Action Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <button
               id="export-ics-action-btn"
               onClick={handleDownloadIcs}
-              className="p-4 rounded-md bg-[#FAF6EE] border border-[#B44732]/40 hover:border-[#B44732] text-left transition flex flex-col justify-between group shadow-xs hover:bg-[#FFFDF9]"
+              disabled={isExporting || !!recordRangeError}
+              className="p-4 rounded-md bg-[#FAF6EE] border border-[#B44732]/40 hover:border-[#B44732] text-left transition flex flex-col justify-between group shadow-xs hover:bg-[#FFFDF9] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -516,7 +590,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <button
               id="export-pdf-action-btn"
               onClick={handleDownloadPdf}
-              disabled={isExporting}
+              disabled={isExporting || !!(pdfMode === 'calendar' ? calendarError || calculationError : recordRangeError)}
               className="p-4 rounded-md bg-[#FAF6EE] border border-[#182421]/30 hover:border-[#182421] text-left transition flex flex-col justify-between group shadow-xs hover:bg-[#FFFDF9] disabled:opacity-60 disabled:cursor-wait disabled:hover:border-[#182421]/30"
             >
               <div>
@@ -533,7 +607,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 </h4>
                 <p className="text-xs text-[#657367] mt-1">
                   {pdfMode === 'calendar'
-                    ? 'Rendered month calendars, one per A4 page — matches the on-screen grid.'
+                    ? 'Full desktop month calendars, one per A4 page, from any device.'
                     : 'Multi-page data table with repeated headers, summary stats, and page numbering.'}
                 </p>
               </div>
@@ -542,16 +616,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </span>
             </button>
           </div>
+        </fieldset>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#D8D0BF] bg-[#EBE3D0] flex items-center justify-between text-xs">
-          <span className="text-[#657367]">
-            Active Zone: {filters.timezone}
+        <div className="shrink-0 p-4 border-t border-[#D8D0BF] bg-[#EBE3D0] flex items-center justify-between gap-3 text-xs">
+          <span className="min-w-0 break-words text-[#657367]">
+            Timezone: {filters.timezone}
           </span>
           <button
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:bg-[#D8D0BF] text-[#182421] font-medium transition"
+            onClick={() => { if (!isExporting) onClose(); }}
+            disabled={isExporting}
+            className="min-h-11 shrink-0 px-4 py-1.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:bg-[#D8D0BF] text-[#182421] font-medium transition"
           >
             Close
           </button>
@@ -562,6 +638,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       <div
         ref={captureRef}
         aria-hidden="true"
+        inert
         style={{
           position: 'fixed',
           top: 0,
@@ -588,6 +665,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               days={mo.days}
               filters={exportFilters}
               onSelectDay={() => {}}
+              forExport
             />
           </div>
         ))}

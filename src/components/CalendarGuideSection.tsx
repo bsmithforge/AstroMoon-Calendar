@@ -47,9 +47,9 @@ const GUIDE_ITEMS: GuideItem[] = [
   {
     id: 'export-guide',
     question: 'How to import the ICS and download the PDF?',
-    shortAnswer: 'Click "Export (.ics / PDF)" to download an RFC 5545 calendar file or a print-ready vector document.',
+    shortAnswer: 'Click "Export (.ics / PDF)" to download an RFC 5545 calendar file or a print-ready calendar or data-table PDF.',
     details:
-      'Click the "Export (.ics / PDF)" button in the control header or at the bottom of the page. Choose your desired date range (current month, 3-month season, full year, or custom range) and select which event types to include. The ".ics" option produces a standard RFC 5545 iCalendar payload with descriptive VEVENT entries that you can import into Apple Calendar, Google Calendar, Microsoft Outlook, or any standard calendar app. The "PDF" option compiles a formatted, multi-page astronomical ephemeris with page numbering, header metadata, and summary tables ready for printing or offline study.',
+      'Click the "Export (.ics / PDF)" button in the control header or at the bottom of the page. Choose your desired date range (current month, 3-month season, full year, or custom range) and select which event types to include. The ".ics" option produces a standard RFC 5545 iCalendar payload with descriptive VEVENT entries that you can import into Apple Calendar, Google Calendar, Microsoft Outlook, or any standard calendar app. The "PDF" option offers a desktop-layout calendar with one whole month per A4 page (up to 24 months), or a data table for your exact date range. Calendar PDFs keep the full layout even when downloaded from a phone.',
     icon: <Download className="w-4 h-4 text-[#B44732]" />,
   },
   {
@@ -87,7 +87,7 @@ export const CalendarGuideSection: React.FC = () => {
             className="text-lg sm:text-xl font-serif-almanac font-bold tracking-tight text-[#182421] flex items-center gap-2"
           >
             <HelpCircle className="w-5 h-5 text-[#B89A62]" />
-            <span>AstroMoon Reference &amp; Frequently Asked Questions</span>
+            <span>A guide to your lunar calendar</span>
           </h2>
           <p className="text-xs text-[#657367] mt-0.5 font-sans-almanac">
             Essential guide to astronomical calculations, Moon sign definitions, and calendar exports.
@@ -95,7 +95,7 @@ export const CalendarGuideSection: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start">
         {GUIDE_ITEMS.map((item) => {
           const isOpen = !!openItems[item.id];
           return (
@@ -110,15 +110,15 @@ export const CalendarGuideSection: React.FC = () => {
                 aria-controls={`guide-content-${item.id}`}
                 className="w-full text-left p-3 sm:p-3.5 flex items-start justify-between gap-2.5 hover:bg-[#F2ECE0] transition"
               >
-                <div className="flex items-start gap-2.5">
+                <div className="flex min-w-0 items-start gap-2.5">
                   <span className="mt-0.5 p-1 rounded bg-[#F0E9DA] border border-[#D8D0BF] shrink-0">
                     {item.icon}
                   </span>
-                  <div>
-                    <h3 className="font-serif-almanac font-bold text-sm text-[#182421]">
+                  <div className="min-w-0 break-words">
+                    <h3 className="font-serif-almanac font-bold text-base leading-snug text-[#182421]">
                       {item.question}
                     </h3>
-                    <p className="text-xs text-[#657367] mt-1 line-clamp-2">
+                    <p className="text-xs leading-relaxed text-[#657367] mt-1">
                       {item.shortAnswer}
                     </p>
                   </div>
@@ -135,7 +135,7 @@ export const CalendarGuideSection: React.FC = () => {
               {isOpen && (
                 <div
                   id={`guide-content-${item.id}`}
-                  className="px-3 sm:px-3.5 pb-3.5 pt-1 text-xs leading-relaxed text-[#182421]/90 border-t border-[#D8D0BF]/60 bg-[#FAF7F0]/60"
+                  className="px-3 sm:px-3.5 pb-3.5 pt-1 text-sm leading-relaxed break-words text-[#182421]/90 border-t border-[#D8D0BF]/60 bg-[#FAF7F0]/60"
                 >
                   <p>{item.details}</p>
                 </div>

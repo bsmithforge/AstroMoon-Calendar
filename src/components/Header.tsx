@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Center: Live Instantaneous Moon Snapshot */}
         <div
-          className="flex items-center gap-2 bg-[#121A18]/90 border border-[#B89A62]/35 rounded-full px-3 py-1 text-xs text-[#D8D0BF] shadow-sm shrink-0 order-3 lg:order-2 mx-auto lg:mx-0 z-10"
+          className="flex flex-wrap max-w-full justify-center items-center gap-x-2 gap-y-1 bg-[#121A18]/90 border border-[#B89A62]/35 rounded-full px-3 py-1 text-xs text-[#D8D0BF] shadow-sm shrink-0 order-3 lg:order-2 mx-auto lg:mx-0 z-10"
           title={`Live geocentric ecliptic longitude: ${liveMoon.lon.toFixed(2)}° (True Equinox of Date)`}
         >
           <span className="text-[#B89A62] font-medium flex items-center gap-1.5 shrink-0 text-[11px] uppercase tracking-wider">

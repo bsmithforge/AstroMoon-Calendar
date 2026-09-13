@@ -294,8 +294,8 @@ export function App() {
         <CalendarGuideSection />
 
         {/* Informative Footer Card: Ephemeris Specs & Transparency */}
-        <div className="mt-8 border border-[#D8D0BF] bg-[#FAF7F0] rounded-md p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs text-[#657367] shadow-xs">
-          <div className="space-y-1 max-w-2xl">
+        <div className="mt-8 border border-[#D8D0BF] bg-[#FAF7F0] rounded-md p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 text-xs text-[#657367] shadow-xs">
+          <div className="space-y-1 min-w-0 max-w-2xl">
             <div className="flex items-center gap-2 text-[#182421] font-serif-almanac text-sm font-semibold">
               <Sparkles className="w-4 h-4 text-[#B89A62]" />
               <span>Astronomical Accuracy &amp; Ephemeris Specifications</span>
@@ -305,7 +305,7 @@ export function App() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <div className="grid w-full min-w-0 gap-2 sm:grid-cols-3 lg:w-64 lg:shrink-0 lg:grid-cols-1 [&>button]:min-h-11 [&>button]:justify-center">
             <button
               onClick={() => setIsMethodologyModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF6EE] hover:bg-[#EAE2D0] text-[#182421] rounded-md border border-[#D8D0BF] transition font-sans-almanac shadow-xs"
@@ -331,10 +331,18 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#D8D0BF] bg-[#EFE8D8] py-4 text-center text-xs text-[#657367]">
-        <p>
-          AstroMoon • Lunar calendar &amp; almanac • Client-side astronomical calculation powered by <code>astronomy-engine@2.1.19</code> • RFC 5545 compliant iCalendar &amp; print-ready PDF export
-        </p>
+      <footer className="border-t border-[#D8D0BF] bg-[#EFE8D8] px-4 sm:px-6 py-6 text-sm text-[#657367]">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-serif-almanac text-lg font-semibold text-[#182421]">AstroMoon</p>
+            <p className="mt-1 text-xs leading-relaxed">Your lunar calendar &amp; almanac. Explore, download, and print.</p>
+          </div>
+          <a href="https://smiths-forge.ai.studio/" target="_blank" rel="noopener noreferrer"
+            className="inline-flex min-h-11 self-start items-center gap-2 rounded-md border border-[#D8D0BF] bg-[#FAF7F0] px-4 py-2 text-[#182421] hover:border-[#B89A62] hover:bg-[#FFFDF9] transition"
+            aria-label="Visit Smith’s Forge (opens in a new tab)">
+            Made by Smith’s Forge <ArrowUpRight className="w-4 h-4 text-[#B44732]" />
+          </a>
+        </div>
       </footer>
 
       {/* Modals */}

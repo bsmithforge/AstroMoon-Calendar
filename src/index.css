@@ -46,9 +46,14 @@ header svg {
   flex-shrink: 0 !important;
 }
 
-/* Ensure buttons with icons maintain proper alignment and prevent text wrapping defects */
+/* Text-bearing controls must wrap on narrow screens. */
 button {
-  white-space: nowrap;
+  white-space: normal;
+}
+
+:where(button, a, select, input, [role="button"]):focus-visible {
+  outline: 2px solid #B44732;
+  outline-offset: 3px;
 }
 
 @media print {

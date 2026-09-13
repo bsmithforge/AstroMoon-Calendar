@@ -6,6 +6,7 @@ interface CalendarGridProps {
   days: DayLunarData[];
   filters: FilterSettings;
   onSelectDay: (day: DayLunarData) => void;
+  forExport?: boolean;
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -14,24 +15,25 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   days,
   filters,
   onSelectDay,
+  forExport = false,
 }) => {
   return (
-    <div className="w-full space-y-1.5">
+    <div className="@container/calendar w-full min-w-0 space-y-1.5">
       {/* Subheader specifying the noon snapshot convention and active timezone */}
-      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between text-[10px] sm:text-[11px] font-sans-almanac text-[#657367] px-1 py-0.5">
-        <span>Daily Moon sign &amp; phase snapshot: <strong className="text-[#182421] font-medium">12:00:00 (Noon Local Time)</strong></span>
-        <span className="font-mono text-[#657367]">Zone: {filters.timezone}</span>
+      <div className="flex flex-col gap-0.5 @min-[36rem]/calendar:flex-row @min-[36rem]/calendar:items-center @min-[36rem]/calendar:justify-between text-[10px] @min-[36rem]/calendar:text-[11px] font-sans-almanac text-[#657367] px-1 py-0.5">
+        <span className="@min-[36rem]/calendar:whitespace-nowrap">Daily Moon sign &amp; phase snapshot: <strong className="text-[#182421] font-medium">12:00:00 (Noon Local Time)</strong></span>
+        <span className="font-mono text-[#657367] break-words">Zone: {filters.timezone}</span>
       </div>
 
       {/* Weekday Column Headers */}
-      <div className="grid grid-cols-7 border-b border-[#D8D0BF] bg-[#EBE3D0] text-center text-[10px] sm:text-xs font-serif-almanac font-semibold uppercase tracking-wider sm:tracking-widest text-[#182421] py-1.5 sm:py-2 rounded-t-md">
+      <div className="grid grid-cols-7 border-b border-[#D8D0BF] bg-[#EBE3D0] text-center text-[10px] @min-[36rem]/calendar:text-xs font-serif-almanac font-semibold uppercase tracking-wider @min-[36rem]/calendar:tracking-widest text-[#182421] py-1.5 @min-[36rem]/calendar:py-2 rounded-t-md">
         {WEEKDAYS.map((day, idx) => (
           <div
             key={day}
-            className={`px-0.5 sm:px-1 ${idx >= 5 ? 'text-[#B44732]' : ''}`}
+            className={`px-0.5 @min-[36rem]/calendar:px-1 ${idx >= 5 ? 'text-[#B44732]' : ''}`}
           >
-            <span className="sm:hidden">{day.charAt(0)}</span>
-            <span className="hidden sm:inline">{day}</span>
+            <span className="@min-[36rem]/calendar:hidden">{day.charAt(0)}</span>
+            <span className="hidden @min-[36rem]/calendar:inline">{day}</span>
           </div>
         ))}
       </div>
@@ -48,7 +50,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               <div
                 key={day.dateString}
                 aria-hidden="true"
-                className="min-h-[80px] sm:min-h-[136px] bg-[#EDE6D5]/50"
+                className="min-h-[80px] @min-[36rem]/calendar:min-h-[136px] bg-[#EDE6D5]/50"
               />
             );
           }
@@ -71,10 +73,10 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
           return (
             <div
               key={day.dateString}
-              id={`day-card-${day.dateString}`}
+              id={forExport ? undefined : `day-card-${day.dateString}`}
               onClick={() => onSelectDay(day)}
-              role="button"
-              tabIndex={0}
+              role={forExport ? undefined : "button"}
+              tabIndex={forExport ? -1 : 0}
               aria-label={`${day.dateString}: ${day.noonPhase.name}, ${Math.round(day.noonPhase.fraction * 100)}% illuminated, Moon in ${day.noonSign.name}${showMajor && day.quarterType ? `, ${day.quarterType}` : ''}${showEclipse && day.eclipseInfo ? `, Eclipse: ${day.eclipseInfo.name}` : ''}`}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -82,7 +84,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                   onSelectDay(day);
                 }
               }}
-              className={`min-h-[80px] sm:min-h-[136px] p-1 sm:p-2.5 flex flex-col justify-between sm:justify-start gap-0.5 sm:gap-1 transition-all duration-150 cursor-pointer select-none group relative ${
+              className={`min-h-[80px] @min-[36rem]/calendar:min-h-[136px] p-1 @min-[36rem]/calendar:p-2.5 flex flex-col justify-between @min-[36rem]/calendar:justify-start gap-0.5 @min-[36rem]/calendar:gap-1 transition-all duration-150 cursor-pointer select-none group relative ${
                 isDimmed
                   ? 'bg-[#EAE3D2]/70 text-[#657367]/60 hover:bg-[#E3DCB8]'
                   : day.isToday
@@ -102,7 +104,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5">
                   <span
-                    className={`font-serif-almanac text-sm sm:text-lg font-semibold tracking-tight ${
+                    className={`font-serif-almanac text-sm @min-[36rem]/calendar:text-lg font-semibold tracking-tight ${
                       day.isToday
                         ? 'w-6 h-6 rounded-full bg-[#B44732] text-white flex items-center justify-center font-bold text-xs shadow-xs font-sans-almanac'
                         : isDimmed
@@ -114,7 +116,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                   </span>
 
                   {day.isToday && (
-                    <span className="hidden xl:inline text-[9px] font-bold uppercase tracking-wider text-[#B44732] font-sans-almanac px-1 py-0.2 rounded bg-[#B44732]/10 border border-[#B44732]/20">
+                    <span className="hidden @min-[72rem]/calendar:inline text-[9px] font-bold uppercase tracking-wider text-[#B44732] font-sans-almanac px-1 py-0.2 rounded bg-[#B44732]/10 border border-[#B44732]/20">
                       Today
                     </span>
                   )}
@@ -124,18 +126,18 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 {(showEclipse || showMajor) && (
                   <span
                     aria-hidden="true"
-                    className="sm:hidden text-[11px] leading-none shrink-0"
+                    className="@min-[36rem]/calendar:hidden text-[11px] leading-none shrink-0"
                   >
                     {showEclipse ? '☀️' : quarterEmoji}
                   </span>
                 )}
 
                 {/* Major Quarter badge or Eclipse pill (sm and up) */}
-                <div className="hidden sm:flex items-center gap-1">
+                <div className="hidden @min-[36rem]/calendar:flex items-center gap-1">
                   {showEclipse && (
                     <span
                       title={`${day.eclipseInfo?.name} (Global peak - check local visibility)`}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-bold font-sans-almanac bg-[#B44732]/15 text-[#B44732] border border-[#B44732]/35 animate-pulse"
+                      className={`whitespace-nowrap px-1 py-0.5 rounded text-[10px] font-bold font-sans-almanac bg-[#B44732]/15 text-[#B44732] border border-[#B44732]/35 ${forExport ? '' : 'animate-pulse'}`}
                     >
                       ☀️ Eclipse
                     </span>
@@ -143,7 +145,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
                   {showMajor && !showEclipse && (
                     <span
-                      className={`text-[10px] font-medium font-sans-almanac px-1.5 py-0.5 rounded tracking-tight ${
+                      className={`whitespace-nowrap text-[10px] font-medium font-sans-almanac px-1 py-0.5 rounded tracking-tight ${
                         isFullMoon
                           ? 'bg-[#B89A62]/20 text-[#684F22] border border-[#B89A62]/40'
                           : isNewMoon
@@ -166,9 +168,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               </div>
 
               {/* Center: Calculated SVG Moon Phase Visual & Illumination */}
-              <div className="my-1 sm:my-1.5 flex items-center justify-between gap-1">
+              <div className="my-1 @min-[36rem]/calendar:my-1.5 flex flex-col @min-[22rem]/calendar:flex-row items-start @min-[22rem]/calendar:items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="inline-flex sm:hidden">
+                  <span className="inline-flex @min-[36rem]/calendar:hidden">
                     <MoonVisual
                       phaseAngle={day.noonPhase.phaseAngle}
                       fraction={day.noonPhase.fraction}
@@ -177,7 +179,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       className="transition-transform group-hover:scale-105"
                     />
                   </span>
-                  <span className="hidden sm:inline-flex">
+                  <span className="hidden @min-[36rem]/calendar:inline-flex">
                     <MoonVisual
                       phaseAngle={day.noonPhase.phaseAngle}
                       fraction={day.noonPhase.fraction}
@@ -189,7 +191,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 </div>
 
                 <span
-                  className="text-[9px] sm:text-sm font-sans-almanac font-semibold text-[#182421] tabular-nums shrink-0"
+                  className="text-[9px] @min-[36rem]/calendar:text-sm font-sans-almanac font-semibold text-[#182421] tabular-nums shrink-0"
                   title={`${day.noonPhase.name} · ${Math.round(day.noonPhase.fraction * 100)}% illuminated`}
                 >
                   {Math.round(day.noonPhase.fraction * 100)}%
@@ -198,7 +200,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
               {/* Moon phase name on its own line (sm and up) so it never truncates */}
               <div
-                className="hidden sm:block text-[10px] font-sans-almanac text-[#657367] leading-tight truncate"
+                className="hidden @min-[36rem]/calendar:block text-[10px] font-sans-almanac text-[#657367] leading-tight truncate"
                 title={day.noonPhase.name}
               >
                 {day.noonPhase.name}
@@ -207,7 +209,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               {/* Mobile-only sign marker: ingress (symbol + time) or noon sign (symbol + degree) */}
               {showIngress && primaryIngress ? (
                 <div
-                  className="sm:hidden mt-0.5 pt-0.5 border-t border-[#D8D0BF] flex items-center justify-between gap-1"
+                  className="@min-[36rem]/calendar:hidden mt-0.5 pt-0.5 border-t border-[#D8D0BF] flex flex-col @min-[22rem]/calendar:flex-row items-start @min-[22rem]/calendar:items-center justify-between gap-1"
                   title={`Moon enters ${primaryIngress.sign.name} at ${primaryIngress.formattedLocalTime}`}
                 >
                   <span
@@ -223,7 +225,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 </div>
               ) : showDailySign ? (
                 <div
-                  className="sm:hidden mt-0.5 pt-0.5 border-t border-[#D8D0BF] flex items-center justify-between gap-1"
+                  className="@min-[36rem]/calendar:hidden mt-0.5 pt-0.5 border-t border-[#D8D0BF] flex flex-col @min-[22rem]/calendar:flex-row items-start @min-[22rem]/calendar:items-center justify-between gap-1"
                   title={`Moon in ${day.noonSign.name} (${day.noonSignDegrees}°${day.noonSignMinutes}') at noon`}
                 >
                   <span
@@ -241,18 +243,18 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
               {/* Bottom: Ingress Transition or Daily Noon Sign (sm and up) */}
               {((showIngress && primaryIngress) || showDailySign) && (
-                <div className="hidden sm:block pt-1 border-t border-[#D8D0BF] space-y-0.5">
+                <div className="hidden @min-[36rem]/calendar:block pt-1 border-t border-[#D8D0BF] space-y-0.5">
                 {showIngress && primaryIngress ? (
                   // Actual Sign Ingress Crossing
                   <div
-                    className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-[#DEE5DF] text-[#182421] border border-[#657367]/40 shadow-xs flex items-center justify-between"
+                    className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-[#DEE5DF] text-[#182421] border border-[#657367]/40 shadow-xs flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5"
                     title={`Moon enters ${primaryIngress.sign.name} at ${primaryIngress.formattedLocalTime} (${filters.timezone})`}
                   >
-                    <div className="flex items-center gap-1 truncate font-semibold">
+                    <div className="flex items-center gap-1 font-semibold">
                       <span role="img" aria-label={`Moon ingress into ${primaryIngress.sign.name}`}>
                         {primaryIngress.sign.symbol}
                       </span>
-                      <span className="truncate">{primaryIngress.sign.name}</span>
+                      <span>{primaryIngress.sign.name}</span>
                     </div>
                     <span className="text-[9px] font-mono text-[#657367] ml-1">
                       {primaryIngress.formattedLocalTime}
