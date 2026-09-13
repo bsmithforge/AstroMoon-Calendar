@@ -13,10 +13,11 @@ import { YearOverview } from './components/YearOverview';
 import { CalendarGuideSection } from './components/CalendarGuideSection';
 import { DayDetailModal } from './components/DayDetailModal';
 import { ExportModal } from './components/ExportModal';
+import { SubscribeModal } from './components/SubscribeModal';
 import { ZodiacGuideModal } from './components/ZodiacGuideModal';
 import { MethodologyModal } from './components/MethodologyModal';
 import { generateMonthData, generateRangeDataset } from './utils/astronomy';
-import { ArrowUpRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Rss, ShieldCheck, Sparkles } from 'lucide-react';
 
 export function App() {
   const initialDate = useMemo(() => {
@@ -61,6 +62,7 @@ export function App() {
   // Modals state
   const [selectedDay, setSelectedDay] = useState<DayLunarData | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState<boolean>(false);
   const [isZodiacGuideOpen, setIsZodiacGuideOpen] = useState<boolean>(false);
   const [isMethodologyModalOpen, setIsMethodologyModalOpen] = useState<boolean>(false);
 
@@ -204,6 +206,7 @@ export function App() {
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
         onOpenExportModal={() => setIsExportModalOpen(true)}
+        onOpenSubscribeModal={() => setIsSubscribeModalOpen(true)}
         onOpenInfoModal={() => setIsZodiacGuideOpen(true)}
         onOpenMethodologyModal={() => setIsMethodologyModalOpen(true)}
       />
@@ -319,7 +322,7 @@ export function App() {
             </p>
           </div>
 
-          <div className="grid w-full min-w-0 gap-2 sm:grid-cols-3 lg:w-64 lg:shrink-0 lg:grid-cols-1 [&>button]:min-h-11 [&>button]:justify-center">
+          <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-64 lg:shrink-0 lg:grid-cols-1 [&>button]:min-h-11 [&>button]:justify-center">
             <button
               onClick={() => setIsMethodologyModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF6EE] hover:bg-[#EAE2D0] text-[#182421] rounded-md border border-[#D8D0BF] transition font-sans-almanac shadow-xs"
@@ -333,6 +336,13 @@ export function App() {
             >
               <span>Zodiac Map (0°–360°)</span>
               <ArrowUpRight className="w-3.5 h-3.5 text-[#657367]" />
+            </button>
+            <button
+              onClick={() => setIsSubscribeModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#657367] hover:bg-[#536056] text-white rounded-md transition font-sans-almanac font-medium shadow-xs"
+            >
+              <Rss className="w-3.5 h-3.5" />
+              <span>Subscribe (live calendar)</span>
             </button>
             <button
               onClick={() => setIsExportModalOpen(true)}
@@ -373,6 +383,12 @@ export function App() {
         currentYear={currentYear}
         currentMonth={currentMonth}
         onClose={() => setIsExportModalOpen(false)}
+      />
+
+      <SubscribeModal
+        isOpen={isSubscribeModalOpen}
+        filters={filters}
+        onClose={() => setIsSubscribeModalOpen(false)}
       />
 
       <ZodiacGuideModal

@@ -8,7 +8,7 @@ A Moon phase and zodiac calendar that computes everything in your browser: exact
 
 ## Get it into your calendar
 
-- **Subscribe (recommended).** Open **Export → Subscribe** on the site to add a live `webcal://` feed to Apple Calendar, Google Calendar, Outlook, Fastmail, Proton, Thunderbird, or anything that accepts a calendar URL. It covers a rolling window (1 month back, 12 months ahead) and refreshes on its own, so it never runs out.
+- **Subscribe (recommended).** Open **Subscribe** on the site to add a live `webcal://` feed to Apple Calendar, Google Calendar, Outlook, Fastmail, Proton, Thunderbird, or anything that accepts a calendar URL. It covers a rolling window (1 month back, 12 months ahead) and refreshes on its own, so it never runs out.
 - **Download an ICS** for a one-time import of any date range.
 - **Print a PDF**: whole-month calendar pages (A4, up to 24 months) or a data table for an exact range.
 

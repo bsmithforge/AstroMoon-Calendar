@@ -5,9 +5,6 @@ import {
   X,
   Check,
   AlertCircle,
-  Copy,
-  ExternalLink,
-  Rss,
 } from 'lucide-react';
 import { FilterSettings } from '../types';
 import {
@@ -16,13 +13,6 @@ import {
   generateMonthData,
 } from '../utils/astronomy';
 import { downloadIcsFile, generateIcsPayload } from '../utils/icsExport';
-import {
-  SUBSCRIPTION_MONTHS_AHEAD,
-  SUBSCRIPTION_MONTHS_BACK,
-  buildAddToCalendarLinks,
-  buildSubscriptionUrl,
-  toWebcalUrl,
-} from '../utils/subscription';
 import { CalendarGrid } from './CalendarGrid';
 
 interface ExportModalProps {
@@ -71,7 +61,6 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
   );
   const [includeEclipses, setIncludeEclipses] = useState(filters.showEclipses);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
-  const [copiedFeedUrl, setCopiedFeedUrl] = useState(false);
 
   // Quick preset ranges keyed to user's active year & month
   const [pdfMode, setPdfMode] = useState<'calendar' | 'table'>('calendar');
@@ -134,33 +123,6 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
       includeEclipses,
     ]
   );
-
-  // Live feed URL: current toggles + timezone/hemisphere; the date range does not apply.
-  const anyEventEnabled = includeMajorPhases || includeIngresses || includeDailySigns || includeEclipses;
-  const feedUrl = useMemo(
-    () =>
-      buildSubscriptionUrl(window.location.origin, {
-        timezone: filters.timezone,
-        hemisphere: filters.hemisphere,
-        showFullNewMoon: includeMajorPhases,
-        showIngresses: includeIngresses,
-        showDailySigns: includeDailySigns,
-        showEclipses: includeEclipses,
-      }),
-    [filters.timezone, filters.hemisphere, includeMajorPhases, includeIngresses, includeDailySigns, includeEclipses]
-  );
-  const webcalUrl = toWebcalUrl(feedUrl);
-  const addLinks = buildAddToCalendarLinks(feedUrl);
-
-  const handleCopyFeedUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(feedUrl);
-      setCopiedFeedUrl(true);
-      setTimeout(() => setCopiedFeedUrl(false), 2500);
-    } catch {
-      window.prompt('Copy this subscription URL:', feedUrl);
-    }
-  };
 
   const validDate = (value: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -379,11 +341,11 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
         aria-labelledby="export-modal-title"
         aria-busy={isExporting}
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#FAF7F0] border border-[#D8D0BF] rounded-lg w-full max-w-xl overflow-hidden shadow-2xl text-[#182421] max-h-[calc(100dvh-2rem)] flex flex-col font-sans-almanac animate-fade-in"
+        className="min-w-0 bg-[#FAF7F0] border border-[#D8D0BF] rounded-lg w-full max-w-xl overflow-hidden shadow-2xl text-[#182421] max-h-[calc(100dvh-2rem)] flex flex-col font-sans-almanac animate-fade-in"
       >
         {/* Modal Header in Observatory Ink */}
         <div className="relative shrink-0 p-4 sm:p-6 bg-[#182421] text-[#F3EDDF] border-b border-[#B89A62]/40 flex items-start justify-between overflow-hidden">
-          <div className="relative z-10 flex items-center gap-3">
+          <div className="relative z-10 flex min-w-0 items-center gap-3">
             <div className="w-10 h-10 rounded-full border border-[#B89A62]/60 overflow-hidden bg-[#121A18] flex items-center justify-center p-0.5 shrink-0">
               <img
                 src="/moon_engraving.jpg"
@@ -392,12 +354,12 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                 className="w-full h-full object-cover rounded-full mix-blend-screen"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <h3 id="export-modal-title" className="text-xl font-serif-almanac font-bold text-[#F3EDDF] tracking-tight">
                 Export Lunar Almanac
               </h3>
               <p className="text-xs text-[#D8D0BF] font-sans-almanac mt-0.5">
-                Live calendar subscriptions, .ics files, or print-ready PDFs
+                Download .ics files or print-ready PDFs
               </p>
             </div>
           </div>
@@ -414,13 +376,13 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
         </div>
 
         {/* Modal Content */}
-        <div className="min-h-0 overflow-y-auto overscroll-contain">
+        <div className="min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain">
         <fieldset disabled={isExporting} className="min-w-0 p-4 sm:p-6 space-y-5 bg-[#FAF7F0]">
           {/* Calendar Compatibility Notice */}
           <div className="p-3.5 rounded-md bg-[#EBE3D0] border border-[#D8D0BF] flex items-start gap-2.5 text-xs text-[#182421]">
             <AlertCircle size={16} strokeWidth={2} className="w-4 h-4 text-[#B89A62] shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              Downloading an <code>.ics</code> file is a static, one-time import into your calendar app. To keep your calendar current automatically, use the live subscription at the bottom of this dialog instead. Events include stable unique IDs and UTC timestamps per RFC 5545.
+              Downloads are static files. For a calendar that refreshes automatically, use the separate <strong>Subscribe</strong> button on the site. Events include stable unique IDs and UTC timestamps per RFC 5545.
             </p>
           </div>
 
@@ -430,11 +392,11 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
               <label className="text-xs font-serif-almanac font-semibold uppercase tracking-wider text-[#182421]">
                 Export Date Range
               </label>
-              <div className="grid grid-cols-3 gap-1 text-xs [&>button]:min-h-11">
+              <div className="grid w-full grid-cols-[repeat(3,minmax(0,1fr))] gap-1 text-[11px] min-[375px]:text-xs sm:w-auto [&>button]:min-h-11 [&>button]:min-w-0">
                 <button
                   type="button"
                   onClick={() => handleRangePreset('currentMonth')}
-                  className={`px-2.5 py-1 rounded-md transition font-medium ${
+                  className={`px-1.5 min-[375px]:px-2.5 py-1 rounded-md transition font-medium ${
                     activePreset === 'currentMonth'
                       ? 'bg-[#182421] text-[#F3EDDF] font-semibold shadow-xs'
                       : 'bg-[#FAF6EE] border border-[#D8D0BF] hover:bg-[#EAE2D0] text-[#182421]'
@@ -445,7 +407,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRangePreset('next3Months')}
-                  className={`px-2.5 py-1 rounded-md transition font-medium ${
+                  className={`px-1.5 min-[375px]:px-2.5 py-1 rounded-md transition font-medium ${
                     activePreset === 'next3Months'
                       ? 'bg-[#182421] text-[#F3EDDF] font-semibold shadow-xs'
                       : 'bg-[#FAF6EE] border border-[#D8D0BF] hover:bg-[#EAE2D0] text-[#182421]'
@@ -456,7 +418,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRangePreset('fullYear')}
-                  className={`px-2.5 py-1 rounded-md transition font-medium ${
+                  className={`px-1.5 min-[375px]:px-2.5 py-1 rounded-md transition font-medium ${
                     activePreset === 'fullYear'
                       ? 'bg-[#182421] text-[#F3EDDF] font-semibold shadow-xs'
                       : 'bg-[#FAF6EE] border border-[#D8D0BF] hover:bg-[#EAE2D0] text-[#182421]'
@@ -561,11 +523,11 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
           {/* PDF layout selector */}
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs [&_button]:min-h-11">
             <span className="text-[#657367] font-medium">PDF layout:</span>
-            <div className="inline-flex rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-0.5 shadow-xs">
+            <div className="grid min-w-0 flex-1 grid-cols-2 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-0.5 shadow-xs min-[375px]:flex-none">
               <button
                 type="button"
                 onClick={() => setPdfMode('calendar')}
-                className={`px-2.5 py-1 rounded font-medium transition ${
+                className={`min-w-0 px-2.5 py-1 rounded font-medium transition ${
                   pdfMode === 'calendar'
                     ? 'bg-[#182421] text-[#F3EDDF] shadow-xs'
                     : 'text-[#657367] hover:text-[#182421]'
@@ -576,7 +538,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
               <button
                 type="button"
                 onClick={() => setPdfMode('table')}
-                className={`px-2.5 py-1 rounded font-medium transition ${
+                className={`min-w-0 px-2.5 py-1 rounded font-medium transition ${
                   pdfMode === 'table'
                     ? 'bg-[#182421] text-[#F3EDDF] shadow-xs'
                     : 'text-[#657367] hover:text-[#182421]'
@@ -656,104 +618,6 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
             </button>
           </div>
 
-          {/* Live subscription (webcal feed) */}
-          <div
-            id="export-subscribe-section"
-            className="space-y-3 rounded-md bg-[#FAF6EE] border border-[#657367]/40 p-4 shadow-xs"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h4 className="font-serif-almanac font-semibold text-sm text-[#182421] flex items-center gap-2">
-                  <Rss size={16} strokeWidth={2} className="w-4 h-4 text-[#657367] shrink-0" />
-                  Subscribe for automatic updates
-                </h4>
-                <p className="text-xs text-[#657367] mt-1 leading-relaxed">
-                  Add a live feed instead of a file. Your calendar app refreshes it on its own schedule, and the
-                  feed always covers {SUBSCRIPTION_MONTHS_BACK} month back through {SUBSCRIPTION_MONTHS_AHEAD} months
-                  ahead. It uses the events checked above with the {filters.timezone} zone; the date range does not apply.
-                </p>
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#657367]/15 text-[#657367] shrink-0">
-                Live feed
-              </span>
-            </div>
-
-            {!anyEventEnabled ? (
-              <p role="alert" className="rounded-md border border-[#B44732]/40 p-3 text-sm text-[#B44732]">
-                Check at least one event type to build a subscription.
-              </p>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs [&>a]:min-h-11">
-                  <a
-                    id="subscribe-webcal-link"
-                    href={webcalUrl}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-[#182421] text-[#F3EDDF] font-semibold hover:bg-[#253631] transition text-center"
-                  >
-                    <CalendarIcon size={14} strokeWidth={2} className="w-3.5 h-3.5 shrink-0" />
-                    Apple / Outlook app
-                  </a>
-                  <a
-                    id="subscribe-google-link"
-                    href={addLinks.google}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:bg-[#EAE2D0] text-[#182421] font-medium transition text-center"
-                  >
-                    <ExternalLink size={14} strokeWidth={2} className="w-3.5 h-3.5 shrink-0" />
-                    Google Calendar
-                  </a>
-                  <a
-                    id="subscribe-outlook-link"
-                    href={addLinks.outlook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:bg-[#EAE2D0] text-[#182421] font-medium transition text-center"
-                  >
-                    <ExternalLink size={14} strokeWidth={2} className="w-3.5 h-3.5 shrink-0" />
-                    Outlook.com
-                  </a>
-                </div>
-
-                <div className="flex flex-col min-[375px]:flex-row gap-2">
-                  <label htmlFor="subscribe-feed-url" className="sr-only">
-                    Subscription URL
-                  </label>
-                  <input
-                    id="subscribe-feed-url"
-                    type="text"
-                    readOnly
-                    value={feedUrl}
-                    onFocus={(e) => e.currentTarget.select()}
-                    className="flex-1 min-w-0 min-h-11 bg-[#FFFDF9] border border-[#D8D0BF] rounded-md px-3 py-2 text-xs text-[#182421] font-mono focus:outline-none focus:border-[#182421]"
-                  />
-                  <button
-                    type="button"
-                    id="subscribe-copy-url-btn"
-                    onClick={handleCopyFeedUrl}
-                    className="min-h-11 shrink-0 px-3 py-2 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] hover:bg-[#EAE2D0] text-[#182421] text-xs font-medium transition flex items-center justify-center gap-1.5"
-                  >
-                    {copiedFeedUrl ? (
-                      <>
-                        <Check size={14} strokeWidth={2} className="w-3.5 h-3.5 text-[#657367] shrink-0" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} strokeWidth={2} className="w-3.5 h-3.5 shrink-0" />
-                        Copy URL
-                      </>
-                    )}
-                  </button>
-                </div>
-                <p className="text-[11px] leading-relaxed text-[#657367]">
-                  Paste the URL into any app that supports calendar subscriptions (Fastmail, Proton, Thunderbird, Outlook
-                  desktop). Google Calendar and Outlook.com open pre-filled in a new tab. Each app decides how often it
-                  refreshes; Google typically checks once or twice a day.
-                </p>
-              </>
-            )}
-          </div>
         </fieldset>
         </div>
 

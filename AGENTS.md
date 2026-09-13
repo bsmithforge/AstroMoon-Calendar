@@ -50,6 +50,7 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 | `src/components/ControlPanel.tsx` | Month navigation, range presets, timezone, hemisphere, event toggles |
 | `src/components/DayDetailModal.tsx` | Noon snapshot, exact events, single-day ICS download |
 | `src/components/ExportModal.tsx` | Export ranges/toggles, downloads, off-screen calendar capture |
+| `src/components/SubscribeModal.tsx` | Live-feed event selection, calendar-app links, and subscription URL copy flow |
 | `src/utils/icsExport.ts` | ICS serialization and browser download |
 | `src/utils/subscription.ts` | Webcal feed contract: query parsing/building, rolling window, feed payload, add-to-calendar links |
 | `server/calendar.ts` | Subscription feed handler (`GET`/`HEAD`, Web-standard `Request`/`Response`); loaded directly by the Vite dev plugin and unit tests |
@@ -82,12 +83,12 @@ Treat the exported files as user-facing deliverables. Changes to dates, filters,
 | Export path | Current flow |
 | --- | --- |
 | Range ICS | `ExportModal` local dates/toggles → `generateRangeDataset()` → `filterAstroRecords()` → `generateIcsPayload()` → Blob/object URL download |
-| Live subscription | `ExportModal` toggles/timezone → `buildSubscriptionUrl()` → user subscribes to `webcal://…/api/calendar?…` → `api/calendar.js` (bundle of `server/calendar.ts`) → `buildSubscriptionIcs()` (rolling window, day-pinned DTSTAMP, `REFRESH-INTERVAL`) → edge-cached `text/calendar` |
+| Live subscription | `SubscribeModal` toggles/timezone → `buildSubscriptionUrl()` → user subscribes to `webcal://…/api/calendar?…` → `api/calendar.js` (bundle of `server/calendar.ts`) → `buildSubscriptionIcs()` (rolling window, day-pinned DTSTAMP, `REFRESH-INTERVAL`) → edge-cached `text/calendar` |
 | Single-day ICS | `DayDetailModal` → all `day.events` (daily-summary fallback) → the same ICS serializer/download helper |
 | Data-table PDF | The same filtered range records as range ICS → dynamically imported `generatePdfDocument()` → jsPDF `save()` |
 | Calendar PDF (default PDF mode) | Months spanned by export dates → `generateMonthData()` → off-screen `CalendarGrid` with export toggles → PNG captures → `generateCalendarPdf()` → jsPDF `save()` |
 
-The export dialog initializes its own dates and toggles from app state; export edits do not update the main calendar filters. Check initialization, reopening, and preset changes when modifying this workflow. ICS files are static, one-time imports, not subscriptions or a live calendar sync.
+The export and subscription dialogs initialize their own toggles from app state; modal edits do not update the main calendar filters. The export dialog also initializes its dates from app state. Check initialization, reopening, and preset changes when modifying these workflows. ICS files are static, one-time imports, not subscriptions or a live calendar sync.
 
 - ICS serializers accept already-selected records. Preserve CRLF endings, escaped text, UTF-8-safe folding at 75 bytes including continuation whitespace, UTC `Z` timestamps for timed events, and exclusive next-day `DTEND` for all-day events.
 - Current ICS UIDs are `${rec.id}@astromooncal.app`. Preserve event identity when changing generation/serialization so repeated imports do not unexpectedly duplicate events. Timed events currently have a one-hour export duration.

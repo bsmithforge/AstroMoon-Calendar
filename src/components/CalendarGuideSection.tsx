@@ -46,9 +46,9 @@ const GUIDE_ITEMS: GuideItem[] = [
   {
     id: 'export-guide',
     question: 'How do I save or print my calendar?',
-    shortAnswer: 'Open Export to subscribe to a live calendar feed, download an ICS file, or print a PDF.',
+    shortAnswer: 'Use Subscribe for a live calendar, or Export to download an ICS file or PDF.',
     details:
-      'Subscribing adds an auto-updating calendar with no download: tap the Apple/Outlook button to open your calendar app’s subscribe dialog, use the Google Calendar or Outlook.com links, or copy the feed URL into any app that supports calendar subscriptions. Importing a downloaded ICS file instead gives a one-time copy that will not update. For printing, choose a calendar PDF with one whole month per A4 page (up to 24 months), or a data table for your exact date range. Calendar PDFs include every month touched by your range. Export settings apply to the download, so you can adjust them without changing the calendar on screen.',
+      'Subscribe adds an auto-updating calendar with no download: use the separate Subscribe button, then tap Apple/Outlook to open your calendar app’s subscribe dialog, use the Google Calendar or Outlook.com links, or copy the feed URL into any app that supports calendar subscriptions. Export creates one-time files that will not update. Choose an ICS calendar, a calendar PDF with one whole month per A4 page (up to 24 months), or a data table for your exact date range. Calendar PDFs include every month touched by your range. Export settings apply only to the download, so you can adjust them without changing the calendar on screen.',
     icon: <Download className="w-4 h-4 text-[#B44732]" />,
   },
   {

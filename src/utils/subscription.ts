@@ -2,7 +2,7 @@
  * Live calendar subscription feed (webcal).
  *
  * Shared by the Vercel function in `api/calendar.ts` (which serves the feed)
- * and `ExportModal` (which builds the URL users subscribe to). Everything here
+ * and `SubscribeModal` (which builds the URL users subscribe to). Everything here
  * is pure and runs in both Node and the browser.
  *
  * A subscription has no fixed date range: each fetch generates a rolling window

@@ -8,6 +8,7 @@ import {
   Sparkles,
   List,
   ShieldCheck,
+  Rss,
 } from 'lucide-react';
 import { Hemisphere, ViewMode } from '../types';
 import { MoonVisual } from './MoonVisual';
@@ -19,6 +20,7 @@ interface HeaderProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   onOpenExportModal: () => void;
+  onOpenSubscribeModal: () => void;
   onOpenInfoModal: () => void;
   onOpenMethodologyModal: () => void;
 }
@@ -28,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   viewMode,
   onViewModeChange,
   onOpenExportModal,
+  onOpenSubscribeModal,
   onOpenInfoModal,
   onOpenMethodologyModal,
 }) => {
@@ -87,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="relative max-w-7xl mx-auto px-3 sm:px-6">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 pt-4 pb-3 sm:pt-5 sm:pb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 pt-4 pb-3 sm:pt-5 sm:pb-4">
           <div className="flex min-w-0 items-center gap-2.5">
             <img src="/moon_engraving.jpg" alt="" className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-[#B89A62]/60 p-0.5 mix-blend-screen shrink-0" />
             <div className="min-w-0">
@@ -96,12 +99,18 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          <button id="open-export-btn" aria-label="Export Calendar as ICS or PDF" onClick={onOpenExportModal}
-            className="lg:col-start-3 lg:row-start-1 justify-self-end inline-flex min-h-11 items-center gap-2 rounded-full bg-[#B44732] px-4 text-xs sm:text-sm font-semibold text-white hover:bg-[#9E3D2A] transition active:scale-95">
-            <Download size={16} /><span>Export</span>
-          </button>
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:justify-self-end lg:col-start-3 lg:row-start-1">
+            <button id="open-subscribe-btn" aria-label="Subscribe to the live AstroMoon calendar" onClick={onOpenSubscribeModal}
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-full border border-[#B89A62]/70 bg-[#182421]/70 px-3 text-xs font-semibold text-[#F3EDDF] transition hover:bg-[#253631] active:scale-95 sm:text-sm">
+              <Rss size={16} /><span>Subscribe</span>
+            </button>
+            <button id="open-export-btn" aria-label="Export Calendar as ICS or PDF" onClick={onOpenExportModal}
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-full bg-[#B44732] px-4 text-xs font-semibold text-white transition hover:bg-[#9E3D2A] active:scale-95 sm:text-sm">
+              <Download size={16} /><span>Export</span>
+            </button>
+          </div>
 
-          <div className="col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[11px] text-[#D8D0BF]"
+          <div className="sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[11px] text-[#D8D0BF]"
             title={`Current Moon: ${Math.round(liveMoon.phase.fraction * 100)}% illuminated. Geocentric longitude ${liveMoon.lon.toFixed(2)}°.`}>
             <span className="inline-flex items-center gap-1.5">
               <span className="text-[#B89A62] text-[9px] uppercase tracking-wider mr-0.5">Now</span>
