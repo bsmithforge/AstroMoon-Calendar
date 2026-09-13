@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GET, HEAD } from '../api/calendar';
+import { GET, HEAD } from '../server/calendar';
 import {
   buildAddToCalendarLinks,
   buildSubscriptionIcs,

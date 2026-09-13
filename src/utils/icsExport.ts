@@ -13,8 +13,8 @@
  * - Consumes the shared AstroRecord dataset directly
  */
 
-import { AstroRecord, Hemisphere } from '../types.js';
-import { createIcsEventFormatter } from './icsFormatting.js';
+import { AstroRecord, Hemisphere } from '../types';
+import { createIcsEventFormatter } from './icsFormatting';
 
 /**
  * Formats a Date to iCalendar UTC string: YYYYMMDDTHHMMSSZ

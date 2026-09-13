@@ -1,6 +1,6 @@
-import { AstroRecord, Hemisphere } from '../types.js';
-import { getUtcForLocalTime } from './astronomy.js';
-import { getZodiacSignFromLongitude } from './zodiac.js';
+import { AstroRecord, Hemisphere } from '../types';
+import { getUtcForLocalTime } from './astronomy';
+import { getZodiacSignFromLongitude } from './zodiac';
 
 /** Presentation for both ICS export paths; shared app/PDF records stay intact. */
 export function createIcsEventFormatter(timeZone: string, hemisphere: Hemisphere) {

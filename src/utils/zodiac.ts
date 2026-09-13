@@ -1,4 +1,4 @@
-import { ZodiacSignInfo } from '../types.js';
+import { ZodiacSignInfo } from '../types';
 
 export const ZODIAC_SIGNS: ZodiacSignInfo[] = [
   {

@@ -38,6 +38,6 @@ npm run lint     # tsc --noEmit
 npm run build    # static build to dist/
 ```
 
-Stack: React 19, TypeScript, Vite 6, Tailwind CSS 4, jsPDF. Deployed on Vercel; `api/` holds the feed function and `vercel.json` sets caching headers. See [AGENTS.md](AGENTS.md) for conventions and domain rules.
+Stack: React 19, TypeScript, Vite 6, Tailwind CSS 4, jsPDF. Deployed on Vercel: the feed handler in `server/calendar.ts` is bundled by esbuild during `npm run build` and exposed through `api/calendar.js`; `vercel.json` sets caching headers. See [AGENTS.md](AGENTS.md) for conventions and domain rules.
 
 Made by [Smith's Forge](https://smiths-forge.ai.studio/).

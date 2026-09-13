@@ -4,7 +4,7 @@ import path from 'path';
 import {defineConfig, Plugin} from 'vite';
 
 /**
- * Serves the Vercel function in `api/` during `vite dev` so the subscription
+ * Serves the subscription feed handler (server/calendar.ts) during `vite dev` so the subscription
  * feed works locally without `vercel dev`. Production routing is handled by Vercel.
  */
 const apiDevServer = (): Plugin => ({
@@ -13,7 +13,7 @@ const apiDevServer = (): Plugin => ({
     server.middlewares.use(async (req, res, next) => {
       if (!req.url?.startsWith('/api/calendar')) return next();
       try {
-        const mod = await server.ssrLoadModule('/api/calendar.ts');
+        const mod = await server.ssrLoadModule('/server/calendar.ts');
         const handler = req.method === 'HEAD' ? mod.HEAD : mod.GET;
         const response: Response = await handler(
           new Request(`http://${req.headers.host || 'localhost'}${req.url}`, {method: req.method})

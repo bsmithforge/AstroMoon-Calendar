@@ -16,7 +16,7 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 | `npm run dev` | Start Vite on port 3000 (also serves `api/` via the dev plugin) |
 | `npm run lint` | Run `tsc --noEmit`; this is type checking, not ESLint |
 | `npm test` | Node test runner over `tests/*.test.ts` (ICS serialization, subscription feed) |
-| `npm run build` | Build the static app into `dist/` |
+| `npm run build` | Build the static app into `dist/`, then bundle the feed function (`npm run build:api`) |
 | `npm run preview` | Serve the built app locally (no `api/`) |
 
 There is no formatter configuration or CI workflow. A successful Vite build does not replace the separate type check.
@@ -27,7 +27,7 @@ The app needs no API keys or `.env` file to run. The `@/` alias resolves to the 
 
 The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless functions in `api/`), with the repository on **GitHub**. Pushes to `main` deploy. Keep implementation choices appropriate to a free-tier budget.
 
-- `api/` holds Vercel Node functions using the Web-standard `Request`/`Response` signature. Vercel compiles them with tsc and runs native Node ESM, so every relative import reachable from `api/` must carry an explicit `.js` extension (`tests/apiRuntime.test.ts` guards this). During `npm run dev`, the plugin in `vite.config.ts` mounts them at the same paths, so `/api/calendar` works locally without `vercel dev`. `vite preview` does not serve them.
+- The feed function is **bundled, not traced**: `api/calendar.js` re-exports `server/dist/calendar.js`, which `npm run build` produces with esbuild. Vercel runs the framework build before it packages `api/`, so the bundle exists at trace time. Do not import `src/` or `node_modules` from `api/` directly: Vercel runs functions as native Node ESM and both extensionless relative imports and astronomy-engine's ESM build (not marked `"type": "module"`) crash its loader. `tests/apiRuntime.test.ts` builds and runs the real entry to guard this. During `npm run dev`, the plugin in `vite.config.ts` serves `server/calendar.ts` at `/api/calendar`, so it works locally without `vercel dev`; `vite preview` does not serve it.
 
 - Prefer small improvements within the current browser-based React/Vite architecture. Keep infrastructure, dependencies, and ongoing maintenance modest; introduce services or major architectural changes only when the requested feature warrants them.
 - Keep ordinary calendar calculations and exports local to the browser. Avoid adding paid APIs, databases, background services, or another hosting platform as incidental requirements.
@@ -52,7 +52,9 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 | `src/components/ExportModal.tsx` | Export ranges/toggles, downloads, off-screen calendar capture |
 | `src/utils/icsExport.ts` | ICS serialization and browser download |
 | `src/utils/subscription.ts` | Webcal feed contract: query parsing/building, rolling window, feed payload, add-to-calendar links |
-| `api/calendar.ts` | Vercel serverless function serving the live subscription feed (`GET /api/calendar`) |
+| `server/calendar.ts` | Subscription feed handler (`GET`/`HEAD`, Web-standard `Request`/`Response`); loaded directly by the Vite dev plugin and unit tests |
+| `scripts/build-api.mjs` | esbuild step (part of `npm run build`) bundling `server/calendar.ts` + astronomy-engine into `server/dist/calendar.js` (gitignored) |
+| `api/calendar.js` | Committed Vercel function entry; only re-exports the bundle |
 | `src/utils/icsFormatting.ts` | Shared ICS titles and multiline notes, selected-timezone labels, hemisphere-aware quarter emojis |
 | `src/utils/pdfExport.ts` | Vector data-table PDF and image-based calendar PDF |
 | `src/components/MoonVisual.tsx` | SVG illumination geometry and hemisphere orientation |
@@ -80,7 +82,7 @@ Treat the exported files as user-facing deliverables. Changes to dates, filters,
 | Export path | Current flow |
 | --- | --- |
 | Range ICS | `ExportModal` local dates/toggles → `generateRangeDataset()` → `filterAstroRecords()` → `generateIcsPayload()` → Blob/object URL download |
-| Live subscription | `ExportModal` toggles/timezone → `buildSubscriptionUrl()` → user subscribes to `webcal://…/api/calendar?…` → `api/calendar.ts` → `buildSubscriptionIcs()` (rolling window, day-pinned DTSTAMP, `REFRESH-INTERVAL`) → edge-cached `text/calendar` |
+| Live subscription | `ExportModal` toggles/timezone → `buildSubscriptionUrl()` → user subscribes to `webcal://…/api/calendar?…` → `api/calendar.js` (bundle of `server/calendar.ts`) → `buildSubscriptionIcs()` (rolling window, day-pinned DTSTAMP, `REFRESH-INTERVAL`) → edge-cached `text/calendar` |
 | Single-day ICS | `DayDetailModal` → all `day.events` (daily-summary fallback) → the same ICS serializer/download helper |
 | Data-table PDF | The same filtered range records as range ICS → dynamically imported `generatePdfDocument()` → jsPDF `save()` |
 | Calendar PDF (default PDF mode) | Months spanned by export dates → `generateMonthData()` → off-screen `CalendarGrid` with export toggles → PNG captures → `generateCalendarPdf()` → jsPDF `save()` |

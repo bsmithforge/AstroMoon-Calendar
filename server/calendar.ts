@@ -1,5 +1,5 @@
 /**
- * Vercel serverless function: live iCalendar subscription feed.
+ * Live iCalendar subscription feed (handler source).
  *
  *   GET /api/calendar?tz=America/Edmonton&hemi=northern&phases=1&ingresses=1&daily=0&eclipses=1
  *
@@ -7,11 +7,15 @@
  * re-fetches this URL on its own schedule. Each response covers a rolling
  * window around today (see `getSubscriptionWindow`), so the feed never runs out.
  *
- * Uses the Web-standard Request/Response signature supported by Vercel's Node
- * runtime; the same export is mounted by the Vite dev server in vite.config.ts.
+ * Deployment: `scripts/build-api.mjs` bundles this file (with astronomy-engine
+ * inlined) into `server/dist/calendar.js`, and the committed Vercel entry
+ * `api/calendar.js` re-exports it. Bundling avoids two runtime pitfalls on
+ * Vercel's Node ESM loader: extensionless relative imports, and
+ * astronomy-engine's ESM build not being marked "type": "module".
+ * The Vite dev server loads this file directly (see vite.config.ts).
  */
 
-import { buildSubscriptionIcs, parseSubscriptionQuery } from '../src/utils/subscription.js';
+import { buildSubscriptionIcs, parseSubscriptionQuery } from '../src/utils/subscription';
 
 // Vercel's edge cache serves repeat fetches of the same URL for a day; the
 // window is computed per UTC day so a longer cache would lag it anyway.

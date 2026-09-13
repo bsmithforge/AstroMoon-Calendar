@@ -9,9 +9,9 @@
  * around "today", so calendar apps that poll the URL always see upcoming events.
  */
 
-import { FilterSettings, Hemisphere } from '../types.js';
-import { filterAstroRecords, generateRangeDataset } from './astronomy.js';
-import { generateIcsPayload } from './icsExport.js';
+import { FilterSettings, Hemisphere } from '../types';
+import { filterAstroRecords, generateRangeDataset } from './astronomy';
+import { generateIcsPayload } from './icsExport';
 
 export interface SubscriptionOptions {
   timezone: string;

@@ -8,11 +8,12 @@
   },
   "scripts": {
     "dev": "vite --port=3000",
-    "build": "vite build",
+    "build": "vite build && npm run build:api",
+    "build:api": "node scripts/build-api.mjs",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist server/dist"
   },
   "dependencies": {
     "astronomy-engine": "2.1.19",
@@ -28,6 +29,7 @@
     "@types/react": "19",
     "@types/react-dom": "19",
     "@vitejs/plugin-react": "^5.0.4",
+    "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
