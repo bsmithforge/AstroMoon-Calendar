@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 
-Sitemap: https://ais-pre-sqgxpndo3vkrw4vjqn6tyx-586986556092.us-west2.run.app/sitemap.xml
+Sitemap: https://astromoon.ca/sitemap.xml

@@ -1,0 +1,14 @@
+{
+  "name": "AstroMoon Calendar",
+  "short_name": "AstroMoon",
+  "description": "Moon phase and zodiac calendar with exact phases, Moon sign ingresses, and eclipses in your timezone.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F3EDDF",
+  "theme_color": "#182421",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/moon_engraving.jpg", "sizes": "512x512", "type": "image/jpeg" }
+  ]
+}

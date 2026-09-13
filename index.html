@@ -3,38 +3,116 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Moon Phase & Zodiac Calendar | AstroMoon Cal</title>
+    <title>Moon Phase & Zodiac Calendar | AstroMoon</title>
     <meta
       name="description"
-      content="Moon Phase & Zodiac Calendar featuring calculated lunar phases, tropical Moon signs, timezone selection, and RFC 5545 ICS and print-ready PDF downloads."
+      content="Exact Moon phases, zodiac Moon sign ingresses, and eclipses in your timezone. Subscribe in Apple, Google, or Outlook Calendar, or download ICS and PDF."
     />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://ais-pre-sqgxpndo3vkrw4vjqn6tyx-586986556092.us-west2.run.app/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://astromoon.ca/" />
+    <meta name="theme-color" content="#182421" />
+    <meta name="application-name" content="AstroMoon" />
+    <meta name="apple-mobile-web-app-title" content="AstroMoon" />
+    <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- Favicon & Brand Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/moon_engraving.jpg" />
 
     <!-- Open Graph / Social Sharing -->
-    <meta property="og:site_name" content="AstroMoon Cal" />
+    <meta property="og:site_name" content="AstroMoon" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Moon Phase & Zodiac Calendar | AstroMoon Cal" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Moon Phase & Zodiac Calendar | AstroMoon" />
     <meta
       property="og:description"
-      content="Moon Phase & Zodiac Calendar featuring calculated lunar phases, tropical Moon signs, timezone selection, and RFC 5545 ICS and print-ready PDF downloads."
+      content="Exact Moon phases, Moon sign ingresses, and eclipses in your timezone. Subscribe in your calendar app or download ICS and PDF."
     />
-    <meta property="og:url" content="https://ais-pre-sqgxpndo3vkrw4vjqn6tyx-586986556092.us-west2.run.app/" />
-    <meta property="og:image" content="https://ais-pre-sqgxpndo3vkrw4vjqn6tyx-586986556092.us-west2.run.app/masthead_banner.jpg" />
-    <meta property="og:image:alt" content="AstroMoon Lunar Calendar & Almanac engraving" />
+    <meta property="og:url" content="https://astromoon.ca/" />
+    <meta property="og:image" content="https://astromoon.ca/og-image.jpg" />
+    <meta property="og:image:secure_url" content="https://astromoon.ca/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="628" />
+    <meta property="og:image:alt" content="Engraved full Moon inside a gilded orbit on a dark botanical background" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Moon Phase & Zodiac Calendar | AstroMoon Cal" />
+    <meta name="twitter:title" content="Moon Phase & Zodiac Calendar | AstroMoon" />
     <meta
       name="twitter:description"
-      content="Moon Phase & Zodiac Calendar featuring calculated lunar phases, tropical Moon signs, timezone selection, and RFC 5545 ICS and print-ready PDF downloads."
+      content="Exact Moon phases, Moon sign ingresses, and eclipses in your timezone. Subscribe in your calendar app or download ICS and PDF."
     />
-    <meta name="twitter:image" content="https://ais-pre-sqgxpndo3vkrw4vjqn6tyx-586986556092.us-west2.run.app/masthead_banner.jpg" />
+    <meta name="twitter:image" content="https://astromoon.ca/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Engraved full Moon inside a gilded orbit on a dark botanical background" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://astromoon.ca/#website",
+          "url": "https://astromoon.ca/",
+          "name": "AstroMoon",
+          "inLanguage": "en"
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://astromoon.ca/#app",
+          "name": "AstroMoon Calendar",
+          "url": "https://astromoon.ca/",
+          "description": "Moon phase and zodiac calendar with exact New and Full Moons, Moon sign ingresses, eclipses, and daily Moon signs in your timezone. Subscribe in Apple, Google, or Outlook, or download ICS and PDF.",
+          "applicationCategory": "UtilitiesApplication",
+          "operatingSystem": "Any",
+          "browserRequirements": "Requires JavaScript",
+          "isAccessibleForFree": true,
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "image": "https://astromoon.ca/og-image.jpg",
+          "featureList": [
+            "Exact New, First Quarter, Full, and Third Quarter Moon times",
+            "Tropical zodiac Moon sign ingresses to the second",
+            "Solar and lunar eclipse peaks",
+            "Daily noon Moon sign snapshot in any IANA timezone",
+            "Live webcal subscription for Apple Calendar, Google Calendar, and Outlook",
+            "RFC 5545 ICS download and print-ready PDF export"
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://astromoon.ca/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What does the Moon sign on each day tell me?",
+              "acceptedAnswer": { "@type": "Answer", "text": "It shows the Moon\u2019s tropical zodiac sign at noon in your selected timezone. An ingress marks the time the Moon enters a new sign. Select a date for its noon position, timed events, and traditional interpretations, which are not scientific predictions." }
+            },
+            {
+              "@type": "Question",
+              "name": "Which zodiac does this calendar use?",
+              "acceptedAnswer": { "@type": "Answer", "text": "The tropical zodiac uses twelve equal 30\u00b0 signs, starting with Aries at the March equinox. Moon positions are calculated from Earth\u2019s center using astronomy-engine and mapped to tropical signs rather than constellation boundaries." }
+            },
+            {
+              "@type": "Question",
+              "name": "Why can an event appear on a different date?",
+              "acceptedAnswer": { "@type": "Answer", "text": "The same event can fall on different calendar days in different timezones. Choose your timezone to use your local dates and times, including daylight saving changes. Eclipse entries mark global peaks and do not indicate local visibility." }
+            },
+            {
+              "@type": "Question",
+              "name": "How do I add the Moon calendar to my calendar app?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Open Export and use Subscribe to add a live feed to Apple Calendar, Google Calendar, Outlook, or any app that accepts a webcal URL; it updates automatically. You can also download a one-time ICS file or a print-ready PDF." }
+            },
+            {
+              "@type": "Question",
+              "name": "What does the hemisphere setting change?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Choosing Northern or Southern flips the Moon illustrations to match your hemisphere\u2019s orientation convention. Event times, zodiac positions, and illumination percentages stay the same." }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
 
     <!-- Web Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,10 +125,10 @@
       <div style="max-width: 1200px; margin: 0 auto; padding: 24px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #182421;">
         <header style="border-bottom: 1px solid #D8D0BF; padding-bottom: 16px; margin-bottom: 24px;">
           <h1 style="font-family: 'Newsreader', Georgia, serif; font-size: 28px; margin: 0 0 8px; color: #182421;">
-            Moon Phase &amp; Zodiac Calendar | AstroMoon Cal
+            Moon Phase &amp; Zodiac Calendar | AstroMoon
           </h1>
           <p style="font-size: 14px; line-height: 1.6; color: #657367; margin: 0;">
-            A calculated astronomical lunar calendar and ephemeris featuring apparent geocentric Moon positions, tropical zodiac signs, exact phase quarters, eclipses, and calendar exports.
+            A calculated lunar calendar and almanac: exact Moon phases, tropical Moon sign ingresses, eclipses, and daily Moon signs in your timezone, with live calendar subscriptions, ICS downloads, and printable PDFs.
           </p>
         </header>
 
@@ -98,10 +176,10 @@
 
             <article style="margin-bottom: 14px;">
               <h3 style="font-size: 14px; font-weight: 600; margin: 0 0 4px; color: #182421;">
-                How do I save or print my calendar?
+                How do I add the Moon calendar to my calendar app?
               </h3>
               <p style="font-size: 13px; line-height: 1.5; color: #657367; margin: 0;">
-                Open Export, choose your dates and events, then download an ICS file for a one-time calendar import or a PDF for printing. Calendar PDFs include whole months, one per A4 page, up to 24 months. Data-table PDFs use your exact date range. ICS imports do not update automatically.
+                Open Export and use Subscribe to add a live feed to Apple Calendar, Google Calendar, Outlook, or any app that accepts a webcal URL; it updates automatically. You can also download a one-time ICS file for import, or a PDF for printing with whole months on A4 pages (up to 24 months) or a data table for your exact date range.
               </p>
             </article>
 

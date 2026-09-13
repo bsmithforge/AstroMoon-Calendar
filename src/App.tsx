@@ -39,7 +39,7 @@ export function App() {
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
-    document.title = `${monthNames[currentMonth]} ${currentYear} | Moon Phase & Zodiac Calendar | AstroMoon Cal`;
+    document.title = `${monthNames[currentMonth]} ${currentYear} | Moon Phase & Zodiac Calendar | AstroMoon`;
 
     const url = new URL(window.location.href);
     url.searchParams.set('year', String(currentYear));
