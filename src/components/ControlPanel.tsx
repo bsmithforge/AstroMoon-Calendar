@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  Compass,
   Globe,
+  ChevronDown,
+  Check,
+  Orbit,
+  Sparkles,
+  Eclipse,
 } from 'lucide-react';
 import { FilterSettings } from '../types';
+import { MoonVisual } from './MoonVisual';
 
 interface ControlPanelProps {
   currentYear: number;
@@ -84,84 +89,104 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const activeRange = filters.rangePreset || 'month';
 
-  const segmentClass = (selected: boolean) =>
-    `min-h-11 min-w-0 flex-1 rounded px-2 py-2 text-sm font-medium transition ${selected
-      ? 'bg-[#182421] text-[#F3EDDF] shadow-xs'
-      : 'text-[#657367] hover:bg-[#EAE1CF] hover:text-[#182421]'}`;
-
+  const [skySettingsOpen, setSkySettingsOpen] = useState(false);
+  const city = filters.timezone.split('/').pop()?.replaceAll('_', ' ') || filters.timezone;
   const eventOptions = [
-    { key: 'showFullNewMoon', id: 'toggle-quarters-cb', label: 'Moon phases', description: 'New, full & quarters' },
-    { key: 'showIngresses', id: 'toggle-ingresses-cb', label: 'Sign ingresses', description: 'Exact sign changes' },
-    { key: 'showDailySigns', id: 'toggle-signs-cb', label: 'Noon Moon sign', description: 'Daily snapshot' },
-    { key: 'showEclipses', id: 'toggle-eclipses-cb', label: 'Eclipses', description: 'Global peaks' },
+    { key: 'showFullNewMoon', id: 'toggle-quarters-cb', label: 'Moon phases', description: 'Exact new Moon, full Moon and quarters', color: '#86662E', background: '#ECE1C7', icon: <MoonVisual phaseAngle={90} fraction={0.5} hemisphere={filters.hemisphere} size={24} /> },
+    { key: 'showIngresses', id: 'toggle-ingresses-cb', label: 'Sign changes', description: 'Exact zodiac sign ingresses', color: '#4E6859', background: '#E0E8DF', icon: <Orbit size={23} strokeWidth={1.5} /> },
+    { key: 'showDailySigns', id: 'toggle-signs-cb', label: 'Noon signs', description: 'Daily Moon sign at local noon', color: '#5C586D', background: '#E8E3EB', icon: <Sparkles size={23} strokeWidth={1.5} /> },
+    { key: 'showEclipses', id: 'toggle-eclipses-cb', label: 'Eclipses', description: 'Global solar and lunar eclipse peaks', color: '#B44732', background: '#F0DED4', icon: <Eclipse size={23} strokeWidth={1.5} /> },
   ] as const;
 
   return (
-    <section aria-label="Calendar controls" className="bg-[#EFE8D8] border-b border-[#D8D0BF] text-[#182421] px-3 sm:px-6 py-4">
-      <div className="max-w-7xl mx-auto space-y-4">
-        <div className="grid gap-3 md:grid-cols-2 md:items-center">
-          <div className="flex flex-wrap items-center gap-2 min-w-0">
-            <div className="flex min-w-0 flex-1 items-center bg-[#FAF6EE] border border-[#D8D0BF] rounded-md p-0.5">
-              <button id="prev-month-btn" aria-label="Previous month" onClick={handlePrevMonth} className="w-11 h-11 flex items-center justify-center shrink-0 rounded hover:bg-[#EAE1CF]">
-                <ChevronLeft size={18} />
-              </button>
-              <div className="flex flex-1 min-w-0 items-center gap-1">
-                <select id="month-select" aria-label="Select calendar month" value={currentMonth}
-                  onChange={(e) => onMonthChange(currentYear, Number(e.target.value))}
-                  className="min-w-0 flex-1 min-h-11 bg-transparent text-base font-serif-almanac font-semibold cursor-pointer">
-                  {MONTH_NAMES.map((name, idx) => <option key={name} value={idx}>{name}</option>)}
-                </select>
-                <select id="year-select" aria-label="Select calendar year" value={currentYear}
-                  onChange={(e) => onMonthChange(Number(e.target.value), currentMonth)}
-                  className="w-[4.5rem] min-h-11 bg-transparent text-base cursor-pointer">
-                  {Array.from({ length: 15 }, (_, i) => 2020 + i).map((year) => <option key={year} value={year}>{year}</option>)}
-                </select>
-              </div>
-              <button id="next-month-btn" aria-label="Next month" onClick={handleNextMonth} className="w-11 h-11 flex items-center justify-center shrink-0 rounded hover:bg-[#EAE1CF]">
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
+    <section aria-label="Calendar controls" className="bg-[#F3EDDF] border-b border-[#D8D0BF] text-[#182421]">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-6 pt-3 sm:pt-4 pb-2">
           <div className="flex min-w-0 items-center gap-2">
+            <button id="prev-month-btn" aria-label="Previous month" onClick={handlePrevMonth} className="w-11 h-11 flex items-center justify-center shrink-0 rounded-full border border-[#D8D0BF] hover:bg-[#EAE1CF] hover:border-[#B89A62] transition">
+              <ChevronLeft size={18} />
+            </button>
+            <div className="flex flex-1 min-w-0 items-center justify-center gap-0.5 md:gap-2">
+              <select id="month-select" aria-label="Select calendar month" value={currentMonth}
+                onChange={(e) => onMonthChange(currentYear, Number(e.target.value))}
+                className="min-w-0 max-w-40 min-h-11 bg-transparent text-xl sm:text-2xl font-serif-almanac font-semibold cursor-pointer">
+                {MONTH_NAMES.map((name, idx) => <option key={name} value={idx}>{name}</option>)}
+              </select>
+              <select id="year-select" aria-label="Select calendar year" value={currentYear}
+                onChange={(e) => onMonthChange(Number(e.target.value), currentMonth)}
+                className="w-[4.2rem] min-h-11 bg-transparent text-base font-serif-almanac text-[#657367] cursor-pointer">
+                {Array.from({ length: 15 }, (_, i) => 2020 + i).map((year) => <option key={year} value={year}>{year}</option>)}
+              </select>
+            </div>
+            <button id="next-month-btn" aria-label="Next month" onClick={handleNextMonth} className="w-11 h-11 flex items-center justify-center shrink-0 rounded-full border border-[#D8D0BF] hover:bg-[#EAE1CF] hover:border-[#B89A62] transition">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 md:gap-5">
             <button id="today-btn" aria-label="Reset to current month and day" onClick={onResetToday}
-              className="min-h-11 px-3 text-sm font-medium text-[#B44732] border border-[#B44732] rounded-md hover:bg-[#B44732] hover:text-white">Today</button>
-            <div role="group" aria-label="Calendar range" className="flex flex-1 min-w-0 gap-1 bg-[#FAF6EE] border border-[#D8D0BF] rounded-md p-1">
-              <button id="range-month-btn" aria-pressed={activeRange === 'month'} onClick={() => onRangePresetChange('month')} className={segmentClass(activeRange === 'month')}>Month</button>
-              <button id="range-3months-btn" aria-pressed={activeRange === 'threeMonths'} onClick={() => onRangePresetChange('threeMonths')} className={segmentClass(activeRange === 'threeMonths')}>3 Months</button>
-              <button id="range-year-btn" aria-pressed={activeRange === 'year'} onClick={() => onRangePresetChange('year')} className={segmentClass(activeRange === 'year')}>Full Year</button>
+              className="min-h-11 px-2 text-xs text-[#B44732] font-medium underline decoration-[#B44732]/30 underline-offset-4 hover:decoration-[#B44732]">Today</button>
+            <div role="group" aria-label="Calendar range" className="flex gap-1">
+              {([
+                { preset: 'month', id: 'range-month-btn', label: '1 month' },
+                { preset: 'threeMonths', id: 'range-3months-btn', label: '3 months' },
+                { preset: 'year', id: 'range-year-btn', label: 'Full year' },
+              ] as const).map(({ preset, id, label }) => (
+                <button key={preset} id={id} aria-pressed={activeRange === preset} onClick={() => onRangePresetChange(preset)}
+                  className={`min-h-11 px-2.5 sm:px-3 text-xs rounded-full transition ${activeRange === preset ? 'text-[#182421] font-semibold bg-[#E8DEC8]' : 'text-[#657367] hover:bg-[#EAE1CF]'}`}>{label}</button>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] border-t border-[#D8D0BF] pt-4">
-          <fieldset className="min-w-0">
-            <legend className="text-xs uppercase tracking-wider font-semibold text-[#657367] mb-2">Show on calendar</legend>
-            <div className="grid grid-cols-2 gap-2">
-              {eventOptions.map(({ key, id, label, description }) => (
-                <label key={key} className="flex min-w-0 items-center gap-2.5 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-2.5 cursor-pointer hover:border-[#657367]">
-                  <input id={id} type="checkbox" checked={filters[key]} onChange={(e) => onFilterChange({ [key]: e.target.checked })}
-                    className="w-4 h-4 shrink-0 accent-[#B44732]" />
-                  <span className="min-w-0"><span className="block text-xs sm:text-sm font-medium">{label}</span><span className="block text-[11px] text-[#657367] mt-0.5">{description}</span></span>
+        <div className="lg:flex lg:items-center lg:justify-between lg:gap-8 border-t border-[#D8D0BF]/70">
+          <fieldset className="min-w-0 lg:flex-1 py-2 sm:py-3">
+            <legend className="sr-only">Events shown on your calendar. Select to show or hide.</legend>
+            <div className="grid grid-cols-4 gap-1 sm:gap-3 lg:max-w-xl">
+              {eventOptions.map(({ key, id, label, description, color, background, icon }) => (
+                <label key={key} htmlFor={id} title={description} className="relative flex flex-col sm:flex-row items-center sm:justify-center gap-1.5 sm:gap-2.5 min-h-16 py-1 cursor-pointer group">
+                  <input id={id} type="checkbox" aria-label={`Show ${description.toLowerCase()}`} checked={filters[key]} onChange={(e) => onFilterChange({ [key]: e.target.checked })} className="peer sr-only" />
+                  <span style={{ color: filters[key] ? color : '#657367', backgroundColor: filters[key] ? background : 'transparent' }}
+                    className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition group-hover:scale-105 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-[#B44732] ${filters[key] ? 'border-transparent' : 'border-[#D8D0BF] opacity-60'}`}>
+                    {icon}
+                    {filters[key] && <span className="absolute -bottom-0.5 -right-0.5 flex w-3.5 h-3.5 items-center justify-center rounded-full bg-[#FAF7F0] border border-current"><Check size={9} strokeWidth={3} /></span>}
+                  </span>
+                  <span className={`max-w-[3.75rem] min-h-7 sm:min-h-0 sm:max-w-none text-[11px] sm:text-xs text-center leading-tight transition ${filters[key] ? 'font-medium text-[#182421]' : 'text-[#657367]'}`}>{label}</span>
                 </label>
               ))}
             </div>
           </fieldset>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+
+          <button id="sky-settings-btn" aria-expanded={skySettingsOpen} aria-controls="sky-settings" onClick={() => setSkySettingsOpen(!skySettingsOpen)}
+            className="w-full lg:w-auto flex min-h-12 items-center justify-between gap-3 border-t lg:border-t-0 border-[#D8D0BF]/70 text-xs text-[#657367] py-2 lg:pl-5 lg:border-l hover:text-[#182421] transition">
+            <span className="flex min-w-0 items-center gap-2.5"><Globe size={16} className="text-[#B89A62]" /><span className="min-w-0 text-left"><span className="block text-[10px] text-[#657367]">Your sky</span><span className="block break-words font-medium text-[#182421]">{city} · {filters.hemisphere === 'northern' ? 'Northern' : 'Southern'} hemisphere</span></span></span>
+            <span className="inline-flex shrink-0 items-center gap-1 text-[11px]">{skySettingsOpen ? 'Done' : 'Change'}<ChevronDown size={13} className={`transition ${skySettingsOpen ? 'rotate-180' : ''}`} /></span>
+          </button>
+        </div>
+
+        <div id="sky-settings" hidden={!skySettingsOpen} className="pb-4 pt-2">
+          <div className="grid gap-4 sm:grid-cols-2 rounded-xl bg-[#EDE6D6] p-4">
             <label className="block min-w-0" htmlFor="timezone-select">
-              <span className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold text-[#657367] mb-2"><Globe size={14} /> Timezone</span>
+              <span className="block text-sm font-serif-almanac font-semibold mb-1.5">Local time</span>
               <select id="timezone-select" value={filters.timezone} onChange={(e) => onFilterChange({ timezone: e.target.value })}
-                className="w-full min-w-0 min-h-12 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] px-2 text-base cursor-pointer">
+                className="w-full min-w-0 min-h-11 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] px-2 text-base cursor-pointer">
                 {[filters.timezone, ...COMMON_TIMEZONES.filter((tz) => tz !== filters.timezone)].map((tz) => <option key={tz} value={tz}>{tz.replaceAll('_', ' ')}</option>)}
               </select>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-[#657367]">Event times use this timezone.</p>
+              <p className="mt-1.5 text-[11px] text-[#657367]">Moon events follow this timezone.</p>
             </label>
             <fieldset className="min-w-0">
-              <legend className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-semibold text-[#657367] mb-2"><Compass size={14} /> Hemisphere</legend>
-              <div className="flex gap-1 bg-[#FAF6EE] border border-[#D8D0BF] rounded-md p-0.5">
-                <button id="hemi-north-btn" aria-label="Northern hemisphere sky orientation" aria-pressed={filters.hemisphere === 'northern'} onClick={() => onFilterChange({ hemisphere: 'northern' })} className={segmentClass(filters.hemisphere === 'northern')}>North</button>
-                <button id="hemi-south-btn" aria-label="Southern hemisphere sky orientation" aria-pressed={filters.hemisphere === 'southern'} onClick={() => onFilterChange({ hemisphere: 'southern' })} className={segmentClass(filters.hemisphere === 'southern')}>South</button>
+              <legend className="text-sm font-serif-almanac font-semibold mb-1.5">How you see the Moon</legend>
+              <div className="flex gap-2">
+                {(['northern', 'southern'] as const).map((hemisphere) => (
+                  <button key={hemisphere} id={hemisphere === 'northern' ? 'hemi-north-btn' : 'hemi-south-btn'} aria-label={`${hemisphere === 'northern' ? 'Northern' : 'Southern'} hemisphere sky orientation`} aria-pressed={filters.hemisphere === hemisphere} onClick={() => onFilterChange({ hemisphere })}
+                    className={`flex flex-1 min-h-11 items-center justify-center gap-2 rounded-full border text-xs transition ${filters.hemisphere === hemisphere ? 'border-[#657367] bg-[#FAF7F0] text-[#182421]' : 'border-transparent text-[#657367] hover:bg-[#FAF7F0]/60'}`}>
+                    <MoonVisual phaseAngle={90} fraction={0.5} hemisphere={hemisphere} size={21} />
+                    {hemisphere === 'northern' ? 'North' : 'South'}
+                    {filters.hemisphere === hemisphere && <Check size={12} />}
+                  </button>
+                ))}
               </div>
-              <p className="mt-1.5 text-[11px] leading-relaxed text-[#657367]">Changes the Moon’s orientation.</p>
+              <p className="mt-1.5 text-[11px] text-[#657367]">Same events, a different Moon orientation.</p>
             </fieldset>
           </div>
         </div>

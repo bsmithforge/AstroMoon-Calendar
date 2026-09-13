@@ -3,7 +3,6 @@ import {
   HelpCircle,
   Compass,
   Globe2,
-  Calendar as CalendarIcon,
   BookOpen,
   Sparkles,
   ChevronDown,
@@ -22,42 +21,42 @@ interface GuideItem {
 const GUIDE_ITEMS: GuideItem[] = [
   {
     id: 'moon-sign',
-    question: 'What does a Moon sign mean in this calendar?',
-    shortAnswer: 'The tropical zodiac sector (0°–360°) occupied by the Moon at a given time.',
+    question: 'What does the Moon sign on each day tell me?',
+    shortAnswer: 'It shows the Moon’s tropical zodiac sign at noon in your selected timezone.',
     details:
-      'In astronomical calculations, the Moon orbits the Earth and completes a 360° circuit around the celestial sphere approximately every 27.3 days (a sidereal month). In this calendar, each of the 12 tropical zodiac signs represents a 30° ecliptic sector starting from the vernal equinox. The Moon spends roughly 2.25 to 2.5 days in each sign, traditionally associated with emotional climates, instinctive rhythms, and environmental focus. We indicate both the daily noon Moon sign and the exact moments when the Moon crosses into a new sign.',
+      'The daily sign and phase are calculated for 12:00 noon on that date. The Moon can change signs during the day; an ingress marks the time it enters the next sign. Select a date to see its noon position, timed events, and traditional interpretations. Those interpretations are astrological traditions, not scientific predictions.',
     icon: <Sparkles className="w-4 h-4 text-[#B89A62]" />,
   },
   {
     id: 'zodiac-conventions',
-    question: 'Which zodiac and calculation conventions are used?',
-    shortAnswer: 'Tropical zodiac referenced to the true equinox of date, calculated with astronomy-engine 2.1.19.',
+    question: 'Which zodiac does this calendar use?',
+    shortAnswer: 'The tropical zodiac: twelve equal 30° signs, starting with Aries at the March equinox.',
     details:
-      'Positions are calculated as apparent geocentric ecliptic longitude (λ, 0° to 360°) referenced to the true equinox of date, accounting for precession, nutation, and light-time aberrations using high-precision VSOP87 planetary theory and ELP2000-82 lunar theory. The 0° point is the vernal equinox (0° Aries). Zodiac sign boundaries occur at exact 30° multiples (0° Aries, 30° Taurus, 60° Gemini, etc.), refined using numerical bisection search to an accuracy of 1 second or better. Major lunar quarters are computed from instantaneous solar-lunar elongation (0° New Moon, 90° First Quarter, 180° Full Moon, 270° Third Quarter).',
+      'Moon positions are calculated from Earth’s center using astronomy-engine. The calendar maps those positions to tropical signs rather than constellation boundaries. Daily phase illustrations show the noon snapshot; New Moon, First Quarter, Full Moon, and Third Quarter events have their own calculated times. Open Methodology & Verification in the Learn menu for calculation details.',
     icon: <BookOpen className="w-4 h-4 text-[#657367]" />,
   },
   {
     id: 'timezone-effects',
-    question: 'How does timezone selection affect dates?',
-    shortAnswer: 'Astronomical events occur at an absolute UTC instant; your selected timezone assigns them to your local solar date.',
+    question: 'Why can an event appear on a different date?',
+    shortAnswer: 'The same event can fall on different calendar days in different timezones.',
     details:
-      'Celestial alignments (such as an exact Full Moon peak or an ingress into Taurus) happen at a single universal instant worldwide (UTC). Selecting your observer timezone translates that universal instant into your local clock time and calendar day. For example, an astronomical Full Moon occurring at 02:30 UTC on September 15 falls on the evening of September 14 in North American timezones (UTC-4 to UTC-7) and on the morning of September 15 in Europe and Asia. Choosing your local timezone ensures dates match your local calendar.',
+      'Choose your timezone under Your sky to display events on the dates and at the times used by your local clock, including daylight saving changes. Changing the timezone also recalculates each daily snapshot for noon in that zone. Eclipse entries mark global peak times; an entry does not mean the eclipse is visible from your location.',
     icon: <Globe2 className="w-4 h-4 text-[#657367]" />,
   },
   {
     id: 'export-guide',
-    question: 'How to import the ICS and download the PDF?',
-    shortAnswer: 'Click "Export (.ics / PDF)" to download an RFC 5545 calendar file or a print-ready calendar or data-table PDF.',
+    question: 'How do I save or print my calendar?',
+    shortAnswer: 'Open Export, choose your dates and events, then download an ICS file or a PDF.',
     details:
-      'Click the "Export (.ics / PDF)" button in the control header or at the bottom of the page. Choose your desired date range (current month, 3-month season, full year, or custom range) and select which event types to include. The ".ics" option produces a standard RFC 5545 iCalendar payload with descriptive VEVENT entries that you can import into Apple Calendar, Google Calendar, Microsoft Outlook, or any standard calendar app. The "PDF" option offers a desktop-layout calendar with one whole month per A4 page (up to 24 months), or a data table for your exact date range. Calendar PDFs keep the full layout even when downloaded from a phone.',
+      'Import the ICS file through your calendar app’s import option. It is a one-time copy and will not update automatically. For printing, choose a calendar PDF with one whole month per A4 page (up to 24 months), or a data table for your exact date range. Calendar PDFs include every month touched by your range. Export settings apply to the download, so you can adjust them without changing the calendar on screen.',
     icon: <Download className="w-4 h-4 text-[#B44732]" />,
   },
   {
     id: 'hemisphere-toggle',
-    question: 'What does the hemisphere toggle change?',
-    shortAnswer: 'It updates the visual illumination orientation (waxing right vs. waxing left) to match your local sky.',
+    question: 'What does the hemisphere setting change?',
+    shortAnswer: 'It flips the Moon illustrations to show the orientation convention for your hemisphere.',
     details:
-      'The Moon\'s physical phase angle and percentage of illumination are identical anywhere on Earth at a given moment. However, observers in the Northern Hemisphere look southward to view the Moon, seeing a waxing crescent lit on the right side and a waning crescent on the left. Observers in the Southern Hemisphere look northward, which inverts the apparent perspective: a waxing crescent is lit on the left side and waning on the right. Toggling between Northern and Southern hemisphere updates the visual rendering of every lunar icon to reflect your local viewpoint.',
+      'Choose Northern or Southern under Your sky. Waxing Moons are drawn with the lit side on the right for the Northern Hemisphere and on the left for the Southern Hemisphere. This setting changes the presentation; event times, zodiac positions, and illumination percentages stay the same. The Moon’s actual tilt in the sky also depends on your location and the time you observe it.',
     icon: <Compass className="w-4 h-4 text-[#B89A62]" />,
   },
 ];
@@ -87,15 +86,15 @@ export const CalendarGuideSection: React.FC = () => {
             className="text-lg sm:text-xl font-serif-almanac font-bold tracking-tight text-[#182421] flex items-center gap-2"
           >
             <HelpCircle className="w-5 h-5 text-[#B89A62]" />
-            <span>A guide to your lunar calendar</span>
+            <span>Frequently asked questions</span>
           </h2>
           <p className="text-xs text-[#657367] mt-0.5 font-sans-almanac">
-            Essential guide to astronomical calculations, Moon sign definitions, and calendar exports.
+            Reading the calendar, choosing your settings, and saving your dates.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start">
+      <div className="flex flex-col gap-3.5">
         {GUIDE_ITEMS.map((item) => {
           const isOpen = !!openItems[item.id];
           return (
@@ -137,7 +136,7 @@ export const CalendarGuideSection: React.FC = () => {
                   id={`guide-content-${item.id}`}
                   className="px-3 sm:px-3.5 pb-3.5 pt-1 text-sm leading-relaxed break-words text-[#182421]/90 border-t border-[#D8D0BF]/60 bg-[#FAF7F0]/60"
                 >
-                  <p>{item.details}</p>
+                  <p className="max-w-prose">{item.details}</p>
                 </div>
               )}
             </article>
@@ -148,7 +147,7 @@ export const CalendarGuideSection: React.FC = () => {
       {/* Prerendered calculation reference disclosure */}
       <div className="mt-4 pt-3 border-t border-[#D8D0BF] text-[11px] text-[#657367] flex flex-wrap items-center justify-between gap-2">
         <span>
-          <strong>Calculation Engine:</strong> <code>astronomy-engine@2.1.19</code> (VSOP87 planetary theory / ELP2000-82 lunar theory)
+          <strong>Calculation Engine:</strong> <code>astronomy-engine@2.1.19</code>
         </span>
         <span>
           <strong>Coordinate Frame:</strong> Geocentric true equinox of date (Tropical Zodiac)

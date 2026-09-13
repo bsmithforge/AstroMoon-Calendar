@@ -2,7 +2,9 @@ import React, { useMemo } from 'react';
 import {
   Calendar as CalendarIcon,
   Download,
-  Globe2,
+  Grid2X2,
+  BookOpen,
+  ChevronDown,
   Sparkles,
   List,
   ShieldCheck,
@@ -44,160 +46,91 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, [hemisphere]);
 
+  const views = [
+    { mode: 'calendar', label: 'Month', icon: CalendarIcon },
+    { mode: 'timeline', label: 'Timeline', icon: List },
+    { mode: 'year', label: 'Year', icon: Grid2X2 },
+  ] as const;
+
+  const openLearnItem = (event: React.MouseEvent<HTMLButtonElement>, action: () => void) => {
+    const menu = event.currentTarget.closest('details');
+    menu?.removeAttribute('open');
+    menu?.querySelector('summary')?.focus();
+    action();
+  };
+
   return (
-    <header className="relative bg-[#182421] text-[#F3EDDF] border-b border-[#B89A62]/40 shadow-lg overflow-hidden z-30">
-      {/* Right-aligned Masthead Lunar Artwork: wide illustration on desktop */}
-      <div className="absolute right-0 top-0 bottom-0 w-full sm:w-2/3 md:w-1/2 pointer-events-none select-none overflow-hidden hidden sm:block">
-        <img
-          src="/masthead_banner.jpg"
-          alt="Astronomical lunar engraving masthead"
-          referrerPolicy="no-referrer"
-          className="absolute right-0 top-0 h-full w-full object-cover object-right opacity-80 mix-blend-screen"
-        />
-        {/* Subtle gradient vignette to ensure high contrast for controls and text */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#182421] via-[#182421]/60 to-transparent" />
+    <header className="relative z-30 bg-[#182421] text-[#F3EDDF] border-b border-[#B89A62]/40">
+      <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+        <img src="/masthead_banner.jpg" alt="" className="absolute right-0 top-0 w-full sm:w-2/3 h-full object-cover object-right opacity-20 mix-blend-screen" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#182421] via-[#182421]/80 to-transparent" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-3.5 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Brand Identity & Wordmark */}
-        <div className="flex items-center gap-3 shrink-0 z-10">
-          {/* Circular Moon Engraving Medallion (Mobile / Brand Icon) */}
-          <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border border-[#B89A62]/60 bg-[#121A18] shadow-inner shrink-0 flex items-center justify-center p-0.5">
-            <img
-              src="/moon_engraving.jpg"
-              alt="Moon engraving medallion"
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover rounded-full mix-blend-screen"
-            />
-          </div>
-
-          <div>
-            <div className="flex items-baseline gap-2">
-              <h1
-                className="text-xl sm:text-2xl font-serif-almanac font-bold tracking-tight text-[#F3EDDF] drop-shadow-sm flex items-center gap-1.5"
-                aria-label="AstroMoon Cal — Moon Phase & Zodiac Calendar"
-              >
-                <span>AstroMoon Cal</span>
-                <span className="text-[#B89A62] text-xs leading-none" title="Midnight Almanac">✦</span>
-              </h1>
+      <div className="relative max-w-7xl mx-auto px-3 sm:px-6">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 pt-4 pb-3 sm:pt-5 sm:pb-4">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <img src="/moon_engraving.jpg" alt="" className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-[#B89A62]/60 p-0.5 mix-blend-screen shrink-0" />
+            <div className="min-w-0">
+              <h1 className="font-serif-almanac text-2xl sm:text-3xl font-semibold leading-none tracking-tight" aria-label="AstroMoon Cal — Moon Phase & Zodiac Calendar">AstroMoon<span aria-hidden="true" className="text-[#B89A62] text-xs align-top ml-1">✦</span></h1>
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-[#D8D0BF] mt-1.5">A lunar almanac</p>
             </div>
-            <p className="text-[11px] sm:text-xs font-sans-almanac text-[#D8D0BF]/90 tracking-wide">
-              Moon Phase &amp; Zodiac Calendar
-            </p>
           </div>
-        </div>
 
-        {/* Center: Live Instantaneous Moon Snapshot */}
-        <div
-          className="flex flex-wrap max-w-full justify-center items-center gap-x-2 gap-y-1 bg-[#121A18]/90 border border-[#B89A62]/35 rounded-full px-3 py-1 text-xs text-[#D8D0BF] shadow-sm shrink-0 order-3 lg:order-2 mx-auto lg:mx-0 z-10"
-          title={`Live geocentric ecliptic longitude: ${liveMoon.lon.toFixed(2)}° (True Equinox of Date)`}
-        >
-          <span className="text-[#B89A62] font-medium flex items-center gap-1.5 shrink-0 text-[11px] uppercase tracking-wider">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#B89A62] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#B89A62]"></span>
+          <button id="open-export-btn" aria-label="Export Calendar as ICS or PDF" onClick={onOpenExportModal}
+            className="lg:col-start-3 lg:row-start-1 justify-self-end inline-flex min-h-11 items-center gap-2 rounded-full bg-[#B44732] px-4 text-xs sm:text-sm font-semibold text-white hover:bg-[#9E3D2A] transition active:scale-95">
+            <Download size={16} /><span>Export</span>
+          </button>
+
+          <div className="col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[11px] text-[#D8D0BF]"
+            title={`Current Moon: ${Math.round(liveMoon.phase.fraction * 100)}% illuminated. Geocentric longitude ${liveMoon.lon.toFixed(2)}°.`}>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="text-[#B89A62] text-[9px] uppercase tracking-wider mr-0.5">Now</span>
+              <MoonVisual phaseAngle={liveMoon.phase.phaseAngle} fraction={liveMoon.phase.fraction} hemisphere={hemisphere} size={20} />
+              <span>{liveMoon.phase.name}</span>
+              <span className="text-[#B89A62]">{Math.round(liveMoon.phase.fraction * 100)}%</span>
             </span>
-            Live:
-          </span>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <MoonVisual
-              phaseAngle={liveMoon.phase.phaseAngle}
-              fraction={liveMoon.phase.fraction}
-              hemisphere={hemisphere}
-              size={18}
-            />
-            <span className="font-serif-almanac text-[#F3EDDF] text-xs sm:text-sm">
-              {liveMoon.phase.name} ({Math.round(liveMoon.phase.fraction * 100)}%)
-            </span>
-          </div>
-          <span className="text-[#657367] shrink-0">•</span>
-          <div className="flex items-center gap-1 text-[#F3EDDF] shrink-0 font-medium">
-            <span className="text-sm leading-none">{liveMoon.sign.symbol}</span>
-            <span className="font-serif-almanac text-xs sm:text-sm">{liveMoon.sign.name}</span>
-            <span className="text-[#D8D0BF] text-[11px] font-mono">
-              {liveMoon.degrees}°{liveMoon.minutes}'
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden="true" className="text-[#B89A62]">{liveMoon.sign.symbol}</span>
+              <span>{liveMoon.sign.name} {liveMoon.degrees}°{liveMoon.minutes}'</span>
             </span>
           </div>
         </div>
 
-        {/* Right: View Switcher, Accuracy, Guide & Primary Vermilion Export Button */}
-        <div className="flex items-center gap-2 flex-wrap justify-end order-2 lg:order-3 w-full lg:w-auto lg:ml-0 z-10">
-          {/* View Mode Switcher */}
-          <nav aria-label="Calendar view modes" className="inline-flex rounded-md bg-[#121A18] border border-[#2C3E39] p-0.5 text-xs font-medium text-[#D8D0BF] shrink-0 shadow-inner">
-            <button
-              id="view-calendar-btn"
-              aria-label="Switch to Month Calendar View"
-              onClick={() => onViewModeChange('calendar')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition shrink-0 ${
-                viewMode === 'calendar'
-                  ? 'bg-[#F3EDDF] text-[#182421] font-semibold shadow-sm'
-                  : 'hover:text-[#F3EDDF] hover:bg-[#1E2E2A]'
-              }`}
-            >
-              <CalendarIcon size={13} strokeWidth={2} className="w-3.5 h-3.5 shrink-0" />
-              <span>Month</span>
-            </button>
-            <button
-              id="view-timeline-btn"
-              aria-label="Switch to Timeline Ephemeris View"
-              onClick={() => onViewModeChange('timeline')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition shrink-0 ${
-                viewMode === 'timeline'
-                  ? 'bg-[#F3EDDF] text-[#182421] font-semibold shadow-sm'
-                  : 'hover:text-[#F3EDDF] hover:bg-[#1E2E2A]'
-              }`}
-            >
-              <List size={13} strokeWidth={2} className="w-3.5 h-3.5 shrink-0" />
-              <span>Timeline</span>
-            </button>
-            <button
-              id="view-year-btn"
-              aria-label="Switch to Full Year Overview"
-              onClick={() => onViewModeChange('year')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition shrink-0 ${
-                viewMode === 'year'
-                  ? 'bg-[#F3EDDF] text-[#182421] font-semibold shadow-sm'
-                  : 'hover:text-[#F3EDDF] hover:bg-[#1E2E2A]'
-              }`}
-            >
-              <Globe2 size={13} strokeWidth={2} className="w-3.5 h-3.5 shrink-0" />
-              <span>Year</span>
-            </button>
+        <div className="flex items-stretch justify-between gap-2 border-t border-[#B89A62]/20">
+          <nav aria-label="Calendar view modes" className="flex flex-1 sm:flex-none sm:gap-4">
+            {views.map(({ mode, label, icon: Icon }) => (
+              <button key={mode} id={`view-${mode}-btn`} aria-pressed={viewMode === mode} aria-label={`Switch to ${label} view`} onClick={() => onViewModeChange(mode)}
+                className={`relative flex flex-1 sm:flex-none min-h-12 items-center justify-center gap-1.5 px-1.5 sm:px-4 text-xs sm:text-sm transition ${viewMode === mode ? 'text-[#F3EDDF]' : 'text-[#D8D0BF]/75 hover:text-[#F3EDDF]'}`}>
+                <Icon size={15} className={viewMode === mode ? 'text-[#B89A62]' : ''} />
+                <span>{label}</span>
+                {viewMode === mode && <span aria-hidden="true" className="absolute bottom-0 inset-x-2 sm:inset-x-4 h-0.5 rounded-full bg-[#B89A62]" />}
+              </button>
+            ))}
           </nav>
 
-          {/* Accuracy & Methodology Modal Trigger */}
-          <button
-            id="desktop-methodology-btn"
-            aria-label="Astronomical Accuracy & Methodology Verification"
-            onClick={onOpenMethodologyModal}
-            className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-[#121A18] border border-[#2C3E39] text-[#D8D0BF] hover:text-[#F3EDDF] hover:border-[#B89A62]/60 transition shadow-sm shrink-0"
-            title="Independent verification against USNO and NASA data"
-          >
-            <ShieldCheck size={13} strokeWidth={2} className="w-3.5 h-3.5 text-[#B89A62] shrink-0" />
-            <span className="hidden sm:inline">Accuracy</span>
-          </button>
-
-          {/* Astrological Guide button */}
-          <button
-            id="desktop-info-btn"
-            aria-label="Astrological Zodiac Degree Map & Guide"
-            onClick={onOpenInfoModal}
-            className="p-1.5 text-[#B89A62] hover:text-[#F3EDDF] hover:bg-[#1E2E2A] rounded-md transition shrink-0"
-            title="Astrological Zodiac Degree Map & Almanac Guide"
-          >
-            <Sparkles size={15} strokeWidth={2} className="w-4 h-4 shrink-0" />
-          </button>
-
-          {/* Export Action Button in Vermilion */}
-          <button
-            id="open-export-btn"
-            aria-label="Export Calendar as ICS or PDF"
-            onClick={onOpenExportModal}
-            className="flex items-center gap-1.5 bg-[#B44732] hover:bg-[#9E3D2A] text-white text-xs font-semibold px-3.5 py-1.5 rounded-md shadow-sm shadow-[#B44732]/30 transition active:scale-95 shrink-0"
-          >
-            <Download size={13} strokeWidth={2.5} className="w-3.5 h-3.5 shrink-0" />
-            <span>Export</span>
-          </button>
+          <details className="relative group self-center"
+            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.removeAttribute('open'); }}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                event.currentTarget.removeAttribute('open');
+                event.currentTarget.querySelector('summary')?.focus();
+              }
+            }}>
+            <summary className="list-none [&::-webkit-details-marker]:hidden min-h-11 flex items-center gap-1.5 px-2 sm:px-3 text-xs text-[#D8D0BF] cursor-pointer rounded hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-[#B89A62]">
+              <BookOpen size={15} className="text-[#B89A62]" /><span>Learn</span><ChevronDown size={12} className="group-open:rotate-180 transition" />
+            </summary>
+            <div className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-2rem)] p-1.5 rounded-lg border border-[#D8D0BF] bg-[#FAF7F0] text-[#182421] shadow-xl">
+              <button id="desktop-info-btn" onClick={(event) => openLearnItem(event, onOpenInfoModal)}
+                className="flex w-full min-h-12 items-center gap-3 rounded-md p-3 text-left text-sm hover:bg-[#EAE2D0]">
+                <Sparkles size={18} className="text-[#B89A62]" /><span>Zodiac guide</span>
+              </button>
+              <button id="desktop-methodology-btn" onClick={(event) => openLearnItem(event, onOpenMethodologyModal)}
+                className="flex w-full min-h-12 items-center gap-3 rounded-md p-3 text-left text-sm hover:bg-[#EAE2D0]">
+                <ShieldCheck size={18} className="text-[#657367]" /><span>How we calculate</span>
+              </button>
+            </div>
+          </details>
         </div>
       </div>
     </header>
