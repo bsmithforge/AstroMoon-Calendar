@@ -18,7 +18,7 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 | `bun run build` | Build the static app into `dist/` |
 | `bun run preview` | Serve the built app locally |
 
-The scripts also work through `npm run` once dependencies are installed. There is currently no test script, test suite, formatter configuration, or CI workflow. A successful Vite build does not replace the separate type check.
+The scripts also work through `npm run` once dependencies are installed. Focused ICS regression tests run with `node --import tsx --test tests/icsExport.test.ts`. There is currently no package test script, formatter configuration, or CI workflow. A successful Vite build does not replace the separate type check.
 
 The app currently needs no API keys or `.env` file to run. `GEMINI_API_KEY`, `APP_URL`, and `VITE_CANONICAL_URL` are not consumed by the current app/config. `DISABLE_HMR=true` controls Vite HMR and file watching; preserve that behavior. The `@/` alias resolves to the repository root, not `src/`.
 
@@ -49,6 +49,7 @@ The owner describes the hosting environment as a **free-tier Google AI Studio pr
 | `src/components/DayDetailModal.tsx` | Noon snapshot, exact events, single-day ICS download |
 | `src/components/ExportModal.tsx` | Export ranges/toggles, downloads, off-screen calendar capture |
 | `src/utils/icsExport.ts` | ICS serialization and browser download |
+| `src/utils/icsFormatting.ts` | Shared ICS titles and multiline notes, selected-timezone labels, hemisphere-aware quarter emojis |
 | `src/utils/pdfExport.ts` | Vector data-table PDF and image-based calendar PDF |
 | `src/components/MoonVisual.tsx` | SVG illumination geometry and hemisphere orientation |
 | `src/utils/validationData.ts` | Static benchmark display data used by `MethodologyModal` |
@@ -83,6 +84,7 @@ The export dialog initializes its own dates and toggles from app state; export e
 
 - ICS serializers accept already-selected records. Preserve CRLF endings, escaped text, UTF-8-safe folding at 75 bytes including continuation whitespace, UTC `Z` timestamps for timed events, and exclusive next-day `DTEND` for all-day events.
 - Current ICS UIDs are `${rec.id}@astromooncal.app`. Preserve event identity when changing generation/serialization so repeated imports do not unexpectedly duplicate events. Timed events currently have a one-hour export duration.
+- Both ICS callers pass the selected timezone and hemisphere to `generateIcsPayload()`. ICS presentation uses `icsFormatting.ts` without mutating shared records: short daily titles, coordinate details, noon snapshot labels, global eclipse visibility notes, and separate traditional interpretations. Keep escaped description line breaks and the final file CRLF intact.
 - Data-table PDFs consume filtered records and use standard PDF fonts with text sanitization, fixed-height rows, truncation, repeated headers, and page numbering.
 - Calendar PDFs capture off-screen `CalendarGrid` instances with `html-to-image`, one month per A4 page. They currently include whole months spanned by the selected range, capped at 24 months. Preserve the capture attributes `data-export-month` and `data-month-label`, and check both PDF modes after shared grid/export changes.
 - Keep PDF/image dependencies dynamically imported from the export actions unless there is a concrete reason to change loading behavior.

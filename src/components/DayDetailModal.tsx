@@ -42,7 +42,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
     const singlePayload = generateIcsPayload(
       eventsToExport,
       `AstroMoon - ${day.dateString}`,
-      timezone
+      timezone,
+      hemisphere
     );
     downloadIcsFile(`astromoon-${day.dateString}`, singlePayload);
   };

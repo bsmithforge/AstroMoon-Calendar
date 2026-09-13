@@ -224,7 +224,8 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
       const icsString = generateIcsPayload(
         exportRecords,
         calendarTitle,
-        filters.timezone
+        filters.timezone,
+        filters.hemisphere
       );
 
       const filename = `astromoon-calendar-${startDate}_to_${endDate}`;

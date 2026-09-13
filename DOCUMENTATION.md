@@ -80,15 +80,13 @@ A lunar zodiac ingress occurs when the Moon's geocentric ecliptic longitude cros
 ## 4. Export Engines & Standards Compliance
 
 ### 4.1 RFC 5545 iCalendar Generator (`.ics`)
-*   **Line Endings**: Strict `\r\n` (CRLF) throughout the document.
+*   **Presentation**: Both range and single-day exports use `src/utils/icsFormatting.ts` for short daily titles and plain-text notes with labeled date/time, timezone, Moon position, and separate traditional interpretations. Daily entries explicitly describe a noon snapshot; eclipse entries identify the global peak and note that local visibility varies. Quarter emojis follow the selected hemisphere. Shared app and PDF records retain their existing text.
+*   **Line Endings**: Strict `\r\n` (CRLF) throughout the document, including after `END:VCALENDAR`. Description line breaks are escaped as `\n` before folding.
 *   **Octet-Safe Line Folding**: Uses byte-length calculation (`TextEncoder().encode`) to fold lines at $\le 75\text{ octets}$, prepending a space (`\r\n `) without corrupting multi-byte UTF-8 character boundaries.
-*   **Unique Identifiers (UID)**: Deterministic, stable UIDs:
-    *   Ingresses: `ingress-YYYYMMDDTHHMMSSZ-<signIndex>@astromoon.cal`
-    *   Quarters: `quarter-YYYYMMDDTHHMMSSZ-<quarterIndex>@astromoon.cal`
-    *   Eclipses: `eclipse-YYYYMMDDTHHMMSSZ-<kind>@astromoon.cal`
-    *   Daily Summaries: `daily-YYYYMMDD-<tz>@astromoon.cal`
+*   **Unique Identifiers (UID)**: Each event retains its shared record ID as `${rec.id}@astromooncal.app`; presentation changes do not alter this identity.
 *   **Timestamp Formatting**: Timed events use UTC `Z` format (`DTSTART:20260303T113800Z`), compatible across Google Calendar, Apple Calendar, and Microsoft Outlook.
 *   **All-Day Event Handling**: Daily summaries use `VALUE=DATE` format with an exclusive next-day `DTEND` per RFC 5545 section 3.6.1.
+*   **Regression Checks**: Run `node --import tsx --test tests/icsExport.test.ts` for formatting, hemisphere, timezone, selection, single-day, date-boundary, and Unicode serialization checks. These do not establish native calendar import or mobile file-delivery compatibility.
 
 ### 4.2 Print-Ready PDF Generator (`jsPDF`)
 *   **Vector Typography & Layout**: High-contrast, clean print layout using standard PDF vector fonts (`helvetica`, `times`, `courier`) to prevent character encoding degradation.
