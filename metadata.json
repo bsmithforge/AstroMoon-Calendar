@@ -1,8 +1,0 @@
-{
-  "name": "AstroMoon",
-  "description": "Moon Phase & Zodiac Calendar featuring calculated lunar phases, tropical Moon signs, timezone selection, and RFC 5545 ICS and print-ready PDF downloads.",
-  "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}

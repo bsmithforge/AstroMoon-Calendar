@@ -7,33 +7,33 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 **Product priorities:** Exports are the main feature. Reliable, accurate, usable downloaded calendars and PDFs take priority when evaluating changes. The entire app must be fully mobile compatible, including export configuration and file delivery. Existing mobile issues are cleanup work to address in a dedicated task, not evidence that mobile support is optional or already complete.
 
 - Stack: React 19, TypeScript, Vite 6, Tailwind CSS 4 via `@tailwindcss/vite`, Lucide icons, and `astronomy-engine` pinned to **2.1.19**. PDF exports use jsPDF and, for calendar images, `html-to-image`.
-- There is no backend, database, authentication, or application API integration in the current source. Some dependencies and `.env.example` entries are template leftovers; their presence does not establish a feature or requirement.
-- `package.json` and `bun.lock` are the dependency sources of truth. Prefer Bun to preserve the existing lockfile; do not introduce another package manager's lockfile incidentally. No runtime version or `packageManager` is declared.
+- There is no database, authentication, or third-party API integration. The only server code is the stateless subscription feed in `api/`; everything else runs in the browser.
+- `package.json` and `package-lock.json` are the dependency sources of truth. Use npm; do not introduce another package manager's lockfile. Node 20+ is required (`engines`).
 
 | Command | Purpose |
 | --- | --- |
-| `bun install --frozen-lockfile` | Install existing locked dependencies |
-| `bun run dev` | Start Vite on port 3000, bound to `0.0.0.0` |
-| `bun run lint` | Run `tsc --noEmit`; this is type checking, not ESLint |
-| `bun run build` | Build the static app into `dist/` |
-| `bun run preview` | Serve the built app locally |
+| `npm ci` | Install existing locked dependencies |
+| `npm run dev` | Start Vite on port 3000 (also serves `api/` via the dev plugin) |
+| `npm run lint` | Run `tsc --noEmit`; this is type checking, not ESLint |
+| `npm test` | Node test runner over `tests/*.test.ts` (ICS serialization, subscription feed) |
+| `npm run build` | Build the static app into `dist/` |
+| `npm run preview` | Serve the built app locally (no `api/`) |
 
-The scripts also work through `npm run` once dependencies are installed. Focused regression tests run with `node --import tsx --test tests/*.test.ts` (ICS serialization and the subscription feed). There is currently no package test script, formatter configuration, or CI workflow. A successful Vite build does not replace the separate type check.
+There is no formatter configuration or CI workflow. A successful Vite build does not replace the separate type check.
 
-The app currently needs no API keys or `.env` file to run. `GEMINI_API_KEY`, `APP_URL`, and `VITE_CANONICAL_URL` are not consumed by the current app/config. `DISABLE_HMR=true` controls Vite HMR and file watching; preserve that behavior. The `@/` alias resolves to the repository root, not `src/`.
+The app needs no API keys or `.env` file to run. The `@/` alias resolves to the repository root, not `src/`.
 
 ## Hosting and GitHub workflow
 
-The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless functions in `api/`), with the repository on **GitHub**. It was originally built in Google AI Studio, so the AI Studio-compatible scripts and env handling remain. Keep implementation choices appropriate to a free-tier budget.
+The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless functions in `api/`), with the repository on **GitHub**. Pushes to `main` deploy. Keep implementation choices appropriate to a free-tier budget.
 
-- `api/` holds Vercel Node functions using the Web-standard `Request`/`Response` signature. During `bun run dev`, the plugin in `vite.config.ts` mounts them at the same paths, so `/api/calendar` works locally without `vercel dev`. `vite preview` does not serve them.
+- `api/` holds Vercel Node functions using the Web-standard `Request`/`Response` signature. During `npm run dev`, the plugin in `vite.config.ts` mounts them at the same paths, so `/api/calendar` works locally without `vercel dev`. `vite preview` does not serve them.
 
 - Prefer small improvements within the current browser-based React/Vite architecture. Keep infrastructure, dependencies, and ongoing maintenance modest; introduce services or major architectural changes only when the requested feature warrants them.
-- Keep ordinary calendar calculations and exports local to the browser. Avoid adding paid APIs, recurring AI calls, databases, background services, or another hosting platform as incidental requirements.
+- Keep ordinary calendar calculations and exports local to the browser. Avoid adding paid APIs, databases, background services, or another hosting platform as incidental requirements.
 - Watch bundle size, repeated astronomy calculations, and memory use during PDF capture. Use bounded ranges, reuse computed data where practical, and retain lazy loading for export libraries.
-- Preserve the existing AI Studio-compatible dev/build scripts and `DISABLE_HMR` behavior. Do not add custom deployment infrastructure merely to support routine app changes.
-- Deliver source/configuration changes through the existing GitHub workflow. Keep generated output, local environment files, and secrets out of commits. Check for incoming changes from AI Studio before pushing and preserve concurrent edits.
-- The sync direction, deployment trigger, and actual hosting quotas are not recorded here. Inspect the project configuration when deployment work is requested; do not assume that a GitHub push automatically publishes the app or that a particular service is covered by the free tier.
+- Do not add custom deployment infrastructure merely to support routine app changes.
+- Deliver source/configuration changes through the existing GitHub workflow. Keep generated output, local environment files, and secrets out of commits.
 
 ## Code map
 
@@ -137,7 +137,7 @@ These are observations from the source, not instructions to fix unrelated issues
 
 ## Validation and handoff
 
-For code changes, run `bun run lint` and `bun run build` when the environment supports them. For documentation-only changes, check the diff and referenced paths/commands; no app build is necessary. Report checks actually run and any blockers without claiming unperformed verification.
+For code changes, run `npm run lint`, `npm test`, and `npm run build` when the environment supports them. For documentation-only changes, check the diff and referenced paths/commands; no app build is necessary. Report checks actually run and any blockers without claiming unperformed verification.
 
 Choose additional checks based on the change:
 
