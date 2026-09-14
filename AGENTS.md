@@ -7,7 +7,7 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 **Product priorities:** Exports are the main feature. Reliable, accurate, usable downloaded calendars and PDFs take priority when evaluating changes. The entire app must be fully mobile compatible, including export configuration and file delivery. Existing mobile issues are cleanup work to address in a dedicated task, not evidence that mobile support is optional or already complete.
 
 - Stack: React 19, TypeScript, Vite 6, Tailwind CSS 4 via `@tailwindcss/vite`, Lucide icons, and `astronomy-engine` pinned to **2.1.19**. PDF exports use jsPDF and, for calendar images, `html-to-image`.
-- There is no database, authentication, or third-party API integration. The only server code is the stateless subscription feed in `api/`; everything else runs in the browser.
+- There is no database, authentication, or third-party API integration. The only server code is the stateless subscription feed in `api/`; everything else runs in the browser. `@vercel/analytics` (mounted in `src/main.tsx`) is the sole telemetry; it is a no-op outside Vercel.
 - `package.json` and `package-lock.json` are the dependency sources of truth. Use npm; do not introduce another package manager's lockfile. Node 20+ is required (`engines`).
 
 | Command | Purpose |

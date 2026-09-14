@@ -30,6 +30,7 @@
     "clean": "rm -rf dist server/dist"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "astronomy-engine": "2.1.19",
     "html-to-image": "^1.11.13",
     "jspdf": "^4.2.1",
