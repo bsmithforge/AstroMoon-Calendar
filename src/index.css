@@ -51,14 +51,15 @@ button {
   white-space: normal;
 }
 
-/* Prevent double-tap zoom on controls; the viewport also disables pinch zoom. */
+/* Keep direct manipulation responsive without restricting browser zoom. */
 :where(button, a, select, input, textarea, [role="button"]) {
   touch-action: manipulation;
 }
 
-:where(button, a, select, input, [role="button"]):focus-visible {
-  outline: 2px solid #B44732;
+:where(button, a, select, input, textarea, [role="button"]):focus-visible {
+  outline: 2px solid #F3EDDF;
   outline-offset: 3px;
+  box-shadow: 0 0 0 5px #182421;
 }
 
 @media print {
@@ -91,4 +92,3 @@ button {
     color: #182421 !important;
   }
 }
-

@@ -431,7 +431,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
 
             <div className="grid grid-cols-1 min-[375px]:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="export-start-date" className="block text-[11px] text-[#657367] mb-1">
+                <label htmlFor="export-start-date" className="block text-[11px] text-[#5F6D61] mb-1">
                   Start Date
                 </label>
                 <input
@@ -447,7 +447,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
               </div>
 
               <div>
-                <label htmlFor="export-end-date" className="block text-[11px] text-[#657367] mb-1">
+                <label htmlFor="export-end-date" className="block text-[11px] text-[#5F6D61] mb-1">
                   End Date
                 </label>
                 <input
@@ -485,7 +485,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                   type="checkbox"
                   checked={includeIngresses}
                   onChange={(e) => setIncludeIngresses(e.target.checked)}
-                  className="w-4 h-4 shrink-0 rounded border-[#D8D0BF] text-[#657367] focus:ring-0 bg-white cursor-pointer"
+                  className="w-4 h-4 shrink-0 rounded border-[#D8D0BF] text-[#5F6D61] focus:ring-0 bg-white cursor-pointer"
                 />
                 <span>Zodiac Ingress Transitions</span>
               </label>
@@ -515,14 +515,14 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
           {/* Success Notification */}
           {downloadSuccess && (
             <div className="p-3 bg-[#E4ECE5] border border-[#657367]/40 rounded-md text-xs text-[#182421] flex items-center gap-2">
-              <Check size={16} strokeWidth={2} className="w-4 h-4 text-[#657367] shrink-0" />
+              <Check size={16} strokeWidth={2} className="w-4 h-4 text-[#5F6D61] shrink-0" />
               <span>{downloadSuccess}</span>
             </div>
           )}
 
           {/* PDF layout selector */}
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs [&_button]:min-h-11">
-            <span className="text-[#657367] font-medium">PDF layout:</span>
+            <span className="text-[#5F6D61] font-medium">PDF layout:</span>
             <div className="grid min-w-0 flex-1 grid-cols-2 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-0.5 shadow-xs min-[375px]:flex-none">
               <button
                 type="button"
@@ -530,7 +530,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                 className={`min-w-0 px-2.5 py-1 rounded font-medium transition ${
                   pdfMode === 'calendar'
                     ? 'bg-[#182421] text-[#F3EDDF] shadow-xs'
-                    : 'text-[#657367] hover:text-[#182421]'
+                    : 'text-[#5F6D61] hover:text-[#182421]'
                 }`}
               >
                 Calendar grid
@@ -541,7 +541,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                 className={`min-w-0 px-2.5 py-1 rounded font-medium transition ${
                   pdfMode === 'table'
                     ? 'bg-[#182421] text-[#F3EDDF] shadow-xs'
-                    : 'text-[#657367] hover:text-[#182421]'
+                    : 'text-[#5F6D61] hover:text-[#182421]'
                 }`}
               >
                 Data table
@@ -549,7 +549,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
             </div>
           </div>
 
-          <p className="text-xs leading-relaxed text-[#657367]">
+          <p className="text-xs leading-relaxed text-[#5F6D61]">
             {pdfMode === 'calendar'
               ? 'Calendar PDF includes every whole month touched by your dates, one per A4 page (maximum 24 months). It always uses the full desktop layout.'
               : 'Data-table PDF includes events within your selected dates. ICS and data-table exports support up to 3,660 days per download.'}
@@ -579,7 +579,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                 <h4 className="font-serif-almanac font-semibold text-sm text-[#182421]">
                   Download .ics Calendar
                 </h4>
-                <p className="text-xs text-[#657367] mt-1">
+                <p className="text-xs text-[#5F6D61] mt-1">
                   Import into Apple Calendar, Google Calendar, or Outlook.
                 </p>
               </div>
@@ -606,7 +606,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                     ? 'Download Calendar PDF'
                     : 'Download Data-Table PDF'}
                 </h4>
-                <p className="text-xs text-[#657367] mt-1">
+                <p className="text-xs text-[#5F6D61] mt-1">
                   {pdfMode === 'calendar'
                     ? 'Full desktop month calendars, one per A4 page, from any device.'
                     : 'Multi-page data table with repeated headers, summary stats, and page numbering.'}
@@ -623,7 +623,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
 
         {/* Footer */}
         <div className="shrink-0 p-4 border-t border-[#D8D0BF] bg-[#EBE3D0] flex items-center justify-between gap-3 text-xs">
-          <span className="min-w-0 break-words text-[#657367]">
+          <span className="min-w-0 break-words text-[#5F6D61]">
             Timezone: {filters.timezone}
           </span>
           <button
@@ -660,7 +660,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
             <h3 className="font-serif-almanac text-2xl text-[#182421] tracking-tight mb-0.5">
               {mo.label}
             </h3>
-            <p className="text-[11px] text-[#657367] mb-3 font-sans-almanac">
+            <p className="text-[11px] text-[#5F6D61] mb-3 font-sans-almanac">
               AstroMoon · Noon snapshots · Zone: {filters.timezone}
             </p>
             <CalendarGrid

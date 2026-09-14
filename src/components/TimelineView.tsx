@@ -32,14 +32,14 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           <CalendarIcon size={16} strokeWidth={2} className="w-4 h-4 text-[#B89A62] shrink-0" />
           <span>Astronomical Lunar &amp; Zodiac Timeline</span>
         </h3>
-        <span className="text-xs text-[#657367] font-sans-almanac font-medium">
+        <span className="text-xs text-[#5F6D61] font-sans-almanac font-medium">
           {activeRecords.length} events in active range ({filters.timezone})
         </span>
       </div>
 
       <div className="divide-y divide-[#D8D0BF] max-h-[720px] overflow-y-auto">
         {activeRecords.length === 0 ? (
-          <div className="p-8 text-center text-[#657367] text-sm">
+          <div className="p-8 text-center text-[#5F6D61] text-sm">
             No events match the active display toggles. Enable "Phases", "Ingresses", "Noon Sign", or "Eclipses" in the control panel.
           </div>
         ) : (
@@ -72,7 +72,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-[#657367] font-sans-almanac">
+                    <span className="text-xs text-[#5F6D61] font-sans-almanac">
                       {rec.phase.name} ({Math.round(rec.phase.fraction * 100)}%)
                     </span>
                   </div>
@@ -92,7 +92,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[#657367] line-clamp-1 font-sans-almanac">
+                  <p className="text-xs text-[#5F6D61] line-clamp-1 font-sans-almanac">
                     {rec.description}
                   </p>
                 </div>
@@ -115,7 +115,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                     </span>
                   )}
                   {rec.eventType === 'daily_summary' && (
-                    <span className="text-[10px] font-medium font-sans-almanac px-2 py-0.5 rounded-md bg-[#FAF6EE] text-[#657367] border border-[#D8D0BF]">
+                    <span className="text-[10px] font-medium font-sans-almanac px-2 py-0.5 rounded-md bg-[#FAF6EE] text-[#5F6D61] border border-[#D8D0BF]">
                       Noon Snapshot
                     </span>
                   )}

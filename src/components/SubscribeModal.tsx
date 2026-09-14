@@ -174,7 +174,7 @@ const SubscribeModalContent: React.FC<SubscribeModalProps> = ({
                     type="checkbox"
                     checked={includeIngresses}
                     onChange={(event) => setIncludeIngresses(event.target.checked)}
-                    className="h-4 w-4 shrink-0 cursor-pointer rounded border-[#D8D0BF] bg-white text-[#657367] focus:ring-0"
+                    className="h-4 w-4 shrink-0 cursor-pointer rounded border-[#D8D0BF] bg-white text-[#5F6D61] focus:ring-0"
                   />
                   <span className="min-w-0">Zodiac Ingress Transitions</span>
                 </label>
@@ -199,7 +199,7 @@ const SubscribeModalContent: React.FC<SubscribeModalProps> = ({
               </div>
             </div>
 
-            <div className="rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-3 text-xs leading-relaxed text-[#657367]">
+            <div className="rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-3 text-xs leading-relaxed text-[#5F6D61]">
               <p className="break-words"><span className="font-semibold text-[#182421]">Timezone:</span> {filters.timezone}</p>
               <p className="mt-1"><span className="font-semibold text-[#182421]">Moon orientation:</span> {filters.hemisphere} hemisphere</p>
               <p className="mt-2 text-[11px]">To change these, close this dialog and use <strong>Your sky</strong>.</p>
@@ -258,11 +258,11 @@ const SubscribeModalContent: React.FC<SubscribeModalProps> = ({
                     onClick={handleCopyFeedUrl}
                     className="flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] px-3 py-2 text-xs font-medium text-[#182421] transition hover:bg-[#EAE2D0]"
                   >
-                    {copiedFeedUrl ? <Check size={14} className="text-[#657367]" /> : <Copy size={14} />}
+                    {copiedFeedUrl ? <Check size={14} className="text-[#5F6D61]" /> : <Copy size={14} />}
                     {copiedFeedUrl ? 'Copied' : 'Copy URL'}
                   </button>
                 </div>
-                <p className="text-[11px] leading-relaxed text-[#657367]">
+                <p className="text-[11px] leading-relaxed text-[#5F6D61]">
                   Copy the URL for Fastmail, Proton, Thunderbird, Outlook desktop, or another app that supports calendar subscriptions. Google Calendar and Outlook.com open in a new tab.
                 </p>
               </div>
@@ -271,7 +271,7 @@ const SubscribeModalContent: React.FC<SubscribeModalProps> = ({
         </div>
 
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#D8D0BF] bg-[#EBE3D0] p-4 text-xs">
-          <span className="min-w-0 text-[#657367]">Live feed · no date range needed</span>
+          <span className="min-w-0 text-[#5F6D61]">Live feed · no date range needed</span>
           <button
             onClick={onClose}
             className="min-h-11 shrink-0 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] px-4 py-1.5 font-medium text-[#182421] transition hover:bg-[#D8D0BF]"

@@ -80,7 +80,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               }}
               className={`min-h-[80px] @min-[36rem]/calendar:min-h-[136px] p-1 @min-[36rem]/calendar:p-2.5 flex flex-col justify-start gap-0.5 @min-[36rem]/calendar:gap-1 transition-all duration-150 cursor-pointer select-none group relative ${
                 isDimmed
-                  ? 'bg-[#EAE3D2]/70 text-[#657367]/60 hover:bg-[#E3DCB8]'
+                  ? 'bg-[#EAE3D2]/70 text-[#5F6D61]/60 hover:bg-[#E3DCB8]'
                   : day.isToday
                   ? 'bg-[#FFFDF7] text-[#182421] ring-1 ring-inset ring-[#B44732]/50 hover:bg-white'
                   : 'bg-[#FAF7F0] text-[#182421] hover:bg-[#FFFDF9]'
@@ -102,7 +102,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       day.isToday
                         ? 'w-6 h-6 rounded-full bg-[#B44732] text-white flex items-center justify-center font-bold text-xs shadow-xs font-sans-almanac'
                         : isDimmed
-                        ? 'text-[#657367]/60'
+                        ? 'text-[#5F6D61]/60'
                         : 'text-[#182421] group-hover:text-[#B44732]'
                     }`}
                   >
@@ -194,7 +194,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
               {/* Moon phase name on its own line (sm and up) so it never truncates */}
               <div
-                className="hidden @min-[36rem]/calendar:block text-[10px] font-sans-almanac text-[#657367] leading-tight truncate"
+                className="hidden @min-[36rem]/calendar:block text-[10px] font-sans-almanac text-[#5F6D61] leading-tight truncate"
                 title={day.noonPhase.name}
               >
                 {day.noonPhase.name}
@@ -213,7 +213,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                   >
                     {primaryIngress.sign.symbol}
                   </span>
-                  <span className="text-[9px] font-mono leading-none text-[#657367]">
+                  <span className="text-[9px] font-mono leading-none text-[#5F6D61]">
                     {primaryIngress.formattedLocalTime}
                   </span>
                 </div>
@@ -229,7 +229,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                   >
                     {day.noonSign.symbol}
                   </span>
-                  <span className="text-[9px] font-mono leading-none text-[#657367]">
+                  <span className="text-[9px] font-mono leading-none text-[#5F6D61]">
                     {day.noonSignDegrees}°
                   </span>
                 </div>
@@ -250,7 +250,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       </span>
                       <span>{primaryIngress.sign.name}</span>
                     </div>
-                    <span className="text-[9px] font-mono text-[#657367] ml-1">
+                    <span className="text-[9px] font-mono text-[#5F6D61] ml-1">
                       {primaryIngress.formattedLocalTime}
                     </span>
                   </div>
@@ -266,7 +266,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       </span>
                       <span className="truncate font-serif-almanac">{day.noonSign.name}</span>
                     </span>
-                    <span className="text-[10px] text-[#657367] font-mono">
+                    <span className="text-[10px] text-[#5F6D61] font-mono">
                       {day.noonSignDegrees}°
                     </span>
                   </div>

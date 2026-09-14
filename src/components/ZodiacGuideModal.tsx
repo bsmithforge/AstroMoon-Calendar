@@ -60,7 +60,7 @@ export const ZodiacGuideModal: React.FC<ZodiacGuideModalProps> = ({
               <span className="font-serif-almanac font-semibold text-[#182421]">
                 Mathematical Ecliptic Longitude System
               </span>
-              <p className="text-[#657367] mt-0.5 leading-relaxed">
+              <p className="text-[#5F6D61] mt-0.5 leading-relaxed">
                 The Moon traverses the complete 360° zodiac wheel every ~27.3 days (sidereal month), staying in each 30° zodiac sector for approximately 2.2 to 2.5 days. AstroMoon calculates precise geocentric apparent longitudes using high-accuracy astronomical algorithms referenced to the true equinox of date.
               </p>
             </div>
@@ -79,7 +79,7 @@ export const ZodiacGuideModal: React.FC<ZodiacGuideModalProps> = ({
                       <span className="font-serif-almanac font-bold text-sm text-[#182421]">
                         {sign.name}
                       </span>
-                      <span className="text-[11px] text-[#657367] block font-mono">
+                      <span className="text-[11px] text-[#5F6D61] block font-mono">
                         {sign.startDeg}° – {sign.endDeg}°
                       </span>
                     </div>
@@ -89,7 +89,7 @@ export const ZodiacGuideModal: React.FC<ZodiacGuideModalProps> = ({
                     <span className="px-2 py-0.5 rounded-full font-medium bg-[#E4ECE5] text-[#182421] border border-[#657367]/40">
                       {sign.element}
                     </span>
-                    <span className="text-[#657367] block text-[10px] mt-0.5">
+                    <span className="text-[#5F6D61] block text-[10px] mt-0.5">
                       {sign.ruler} • {sign.modality}
                     </span>
                   </div>

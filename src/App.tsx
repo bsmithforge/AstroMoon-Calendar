@@ -19,6 +19,23 @@ import { MethodologyModal } from './components/MethodologyModal';
 import { generateMonthData, generateRangeDataset } from './utils/astronomy';
 import { ArrowUpRight, Rss, ShieldCheck, Sparkles } from 'lucide-react';
 
+function getPresetRange(year: number, month: number, preset: CalendarViewMode) {
+  if (preset === 'year') {
+    return { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
+  }
+
+  const endOffset = preset === 'threeMonths' ? 2 : 0;
+  const endMonthAbsolute = month + endOffset;
+  const endYear = year + Math.floor(endMonthAbsolute / 12);
+  const endMonth = endMonthAbsolute % 12;
+  const lastDay = new Date(endYear, endMonth + 1, 0).getDate();
+
+  return {
+    startDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+    endDate: `${endYear}-${String(endMonth + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
 export function App() {
   const initialDate = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -75,6 +92,10 @@ export function App() {
   const handleMonthChange = (year: number, month: number) => {
     setCurrentYear(year);
     setCurrentMonth(month);
+    setFilters((prev) => ({
+      ...prev,
+      ...getPresetRange(year, month, prev.rangePreset || 'month'),
+    }));
   };
 
   // Reset to today
@@ -92,31 +113,10 @@ export function App() {
 
   // Range preset changer
   const handleRangePresetChange = (preset: CalendarViewMode) => {
-    const y = currentYear;
-    const m = currentMonth;
-    let start = '';
-    let end = '';
-
-    if (preset === 'month') {
-      start = `${y}-${String(m + 1).padStart(2, '0')}-01`;
-      const lastDay = new Date(y, m + 1, 0).getDate();
-      end = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    } else if (preset === 'threeMonths') {
-      start = `${y}-${String(m + 1).padStart(2, '0')}-01`;
-      const endM = (m + 2) % 12;
-      const endY = m + 2 >= 12 ? y + 1 : y;
-      const lastDay = new Date(endY, endM + 1, 0).getDate();
-      end = `${endY}-${String(endM + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    } else if (preset === 'year') {
-      start = `${y}-01-01`;
-      end = `${y}-12-31`;
-    }
-
     setFilters((prev) => ({
       ...prev,
       rangePreset: preset,
-      startDate: start,
-      endDate: end,
+      ...getPresetRange(currentYear, currentMonth, preset),
     }));
   };
 
@@ -215,6 +215,7 @@ export function App() {
       <ControlPanel
         currentYear={currentYear}
         currentMonth={currentMonth}
+        viewMode={viewMode}
         filters={filters}
         onFilterChange={handleFilterChange}
         onMonthChange={handleMonthChange}
@@ -235,13 +236,13 @@ export function App() {
                     ? calendarMonths[0].label
                     : `${calendarMonths[0].label} – ${calendarMonths[calendarMonths.length - 1].label}`}
                 </h2>
-                <p className="text-xs text-[#657367] mt-0.5">
+                <p className="text-xs text-[#5F6D61] mt-0.5">
                   Select any date to view astronomical coordinates, zodiac ingresses, and traditional interpretations.
                 </p>
               </div>
 
               {/* Legend Badges */}
-              <div className="flex items-center gap-3 text-xs text-[#657367] flex-wrap">
+              <div className="flex items-center gap-3 text-xs text-[#5F6D61] flex-wrap">
                 <span className="flex items-center gap-1.5">
                   <span aria-hidden="true" className="text-sm leading-none">🌕</span>
                   <span className="font-serif-almanac">Full Moon</span>
@@ -251,7 +252,7 @@ export function App() {
                   <span className="font-serif-almanac">New Moon</span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="text-[#657367] font-bold">♈</span>
+                  <span className="text-[#5F6D61] font-bold">♈</span>
                   <span className="font-serif-almanac">Sign Ingress</span>
                 </span>
                 <span className="flex items-center gap-1">
@@ -261,7 +262,7 @@ export function App() {
               </div>
             </div>
 
-            <p className="text-[11px] leading-relaxed text-[#657367] break-words">
+            <p className="text-[11px] leading-relaxed text-[#5F6D61] break-words">
               Daily Moon sign &amp; phase snapshots: <strong className="font-medium text-[#182421]">{snapshotRangeLabel}, at 12:00:00 noon each day</strong>
               {' '}· {filters.timezone}.
             </p>
@@ -302,6 +303,11 @@ export function App() {
             timezone={filters.timezone}
             onSelectMonth={(m) => {
               setCurrentMonth(m);
+              setFilters((prev) => ({
+                ...prev,
+                rangePreset: 'month',
+                ...getPresetRange(currentYear, m, 'month'),
+              }));
               setViewMode('calendar');
             }}
           />
@@ -311,7 +317,7 @@ export function App() {
         <CalendarGuideSection />
 
         {/* Informative Footer Card: Ephemeris Specs & Transparency */}
-        <div className="mt-8 border border-[#D8D0BF] bg-[#FAF7F0] rounded-md p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 text-xs text-[#657367] shadow-xs">
+        <div className="mt-8 border border-[#D8D0BF] bg-[#FAF7F0] rounded-md p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 text-xs text-[#5F6D61] shadow-xs">
           <div className="space-y-1 min-w-0 max-w-2xl">
             <div className="flex items-center gap-2 text-[#182421] font-serif-almanac text-sm font-semibold">
               <Sparkles className="w-4 h-4 text-[#B89A62]" />
@@ -335,7 +341,7 @@ export function App() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF6EE] hover:bg-[#EAE2D0] text-[#182421] rounded-md border border-[#D8D0BF] transition font-sans-almanac shadow-xs"
             >
               <span>Zodiac Map (0°–360°)</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-[#657367]" />
+              <ArrowUpRight className="w-3.5 h-3.5 text-[#5F6D61]" />
             </button>
             <button
               onClick={() => setIsSubscribeModalOpen(true)}
@@ -355,13 +361,13 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#D8D0BF] bg-[#EFE8D8] px-4 sm:px-6 py-6 text-sm text-[#657367]">
+      <footer className="border-t border-[#D8D0BF] bg-[#EFE8D8] px-4 sm:px-6 py-6 text-sm text-[#5F6D61]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="font-serif-almanac text-lg font-semibold text-[#182421]">AstroMoon</p>
             <p className="mt-1 text-xs leading-relaxed">Your lunar calendar &amp; almanac. Explore, download, and print.</p>
           </div>
-          <a href="https://smiths-forge.ai.studio/" target="_blank" rel="noopener noreferrer"
+          <a href="https://smiths-forge.ca/" target="_blank" rel="noopener noreferrer"
             className="inline-flex min-h-11 self-start items-center gap-2 rounded-md border border-[#D8D0BF] bg-[#FAF7F0] px-4 py-2 text-[#182421] hover:border-[#B89A62] hover:bg-[#FFFDF9] transition"
             aria-label="Visit Smith’s Forge (opens in a new tab)">
             Made by Smith’s Forge <ArrowUpRight className="w-4 h-4 text-[#B44732]" />

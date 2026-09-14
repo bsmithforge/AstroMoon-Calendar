@@ -230,7 +230,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
             {/* Astronomical Specifications Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="bg-[#F0E9DA] border border-[#D8D0BF] rounded-md p-2.5 text-center">
-                <span className="text-[10px] uppercase font-sans-almanac tracking-wider text-[#657367] block">
+                <span className="text-[10px] uppercase font-sans-almanac tracking-wider text-[#5F6D61] block">
                   Illumination
                 </span>
                 <span className="text-sm font-semibold font-serif-almanac text-[#182421]">
@@ -239,7 +239,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </div>
 
               <div className="bg-[#F0E9DA] border border-[#D8D0BF] rounded-md p-2.5 text-center">
-                <span className="text-[10px] uppercase font-sans-almanac tracking-wider text-[#657367] block">
+                <span className="text-[10px] uppercase font-sans-almanac tracking-wider text-[#5F6D61] block">
                   Phase Angle
                 </span>
                 <span className="text-sm font-semibold font-serif-almanac text-[#182421]">
@@ -248,7 +248,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </div>
 
               <div className="bg-[#F0E9DA] border border-[#D8D0BF] rounded-md p-2.5 text-center">
-                <span className="text-[10px] uppercase font-sans-almanac tracking-wider text-[#657367] block">
+                <span className="text-[10px] uppercase font-sans-almanac tracking-wider text-[#5F6D61] block">
                   Ecliptic Longitude
                 </span>
                 <span className="text-sm font-semibold font-serif-almanac text-[#182421]">
@@ -257,7 +257,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               </div>
 
               <div className="bg-[#F0E9DA] border border-[#D8D0BF] rounded-md p-2.5 text-center">
-                <span className="text-[10px] uppercase font-sans-almanac tracking-wider text-[#657367] block">
+                <span className="text-[10px] uppercase font-sans-almanac tracking-wider text-[#5F6D61] block">
                   Zodiac Position
                 </span>
                 <span className="text-sm font-semibold font-serif-almanac text-[#182421]">
@@ -276,7 +276,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                       <span className="text-sm font-serif-almanac font-semibold text-[#182421] block">
                         Moon in {primarySign.name}
                       </span>
-                      <span className="text-[11px] text-[#657367]">
+                      <span className="text-[11px] text-[#5F6D61]">
                         Traditional Sign Attributes
                       </span>
                     </div>
@@ -296,7 +296,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                   {primarySign.description}
                 </p>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] text-[#657367]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] text-[#5F6D61]">
                   <div>
                     <span className="block font-medium text-[#182421]">Ruling Planet:</span>
                     <span>{primarySign.ruler}</span>
@@ -320,7 +320,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
             {/* Phase Guidance Theme */}
             {day.noonPhase && (
               <div className="bg-[#FAF6EE] border border-[#D8D0BF] rounded-md p-3.5 text-xs">
-                <span className="text-[#657367] font-medium font-serif-almanac block mb-1">
+                <span className="text-[#5F6D61] font-medium font-serif-almanac block mb-1">
                   Phase Meaning ({day.noonPhase.emoji} {day.noonPhase.name})
                 </span>
                 <p className="text-[#182421] italic font-serif-almanac">
@@ -341,7 +341,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                       key={i}
                       className="flex items-center gap-2 bg-[#FAF6EE] border border-[#D8D0BF] rounded-md px-3 py-2 text-xs text-[#182421]"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#657367] shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#5F6D61] shrink-0" />
                       <span>{act}</span>
                     </div>
                   ))}
@@ -354,7 +354,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
 
         {/* Modal Footer Actions */}
         <div className="shrink-0 p-3 sm:p-4 bg-[#EBE3D0] border-t border-[#D8D0BF] flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[11px] text-[#657367]">
+          <span className="text-[11px] text-[#5F6D61]">
             Sky View: {hemisphere === 'northern' ? 'Northern' : 'Southern'} Hemisphere
           </span>
 

@@ -83,10 +83,10 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
             className={`px-4 py-2 rounded-t-md transition-colors border-b-2 flex items-center gap-2 ${
               activeTab === 'benchmarks'
                 ? 'text-[#182421] border-[#B44732] bg-[#FAF7F0] font-semibold'
-                : 'text-[#657367] border-transparent hover:text-[#182421]'
+                : 'text-[#5F6D61] border-transparent hover:text-[#182421]'
             }`}
           >
-            <CheckCircle2 className="w-4 h-4 text-[#657367]" />
+            <CheckCircle2 className="w-4 h-4 text-[#5F6D61]" />
             Independent Benchmarks (USNO &amp; NASA)
           </button>
           <button
@@ -95,7 +95,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
             className={`px-4 py-2 rounded-t-md transition-colors border-b-2 flex items-center gap-2 ${
               activeTab === 'coordinates'
                 ? 'text-[#182421] border-[#B44732] bg-[#FAF7F0] font-semibold'
-                : 'text-[#657367] border-transparent hover:text-[#182421]'
+                : 'text-[#5F6D61] border-transparent hover:text-[#182421]'
             }`}
           >
             <Compass className="w-4 h-4 text-[#B89A62]" />
@@ -107,10 +107,10 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
             className={`px-4 py-2 rounded-t-md transition-colors border-b-2 flex items-center gap-2 ${
               activeTab === 'timezones'
                 ? 'text-[#182421] border-[#B44732] bg-[#FAF7F0] font-semibold'
-                : 'text-[#657367] border-transparent hover:text-[#182421]'
+                : 'text-[#5F6D61] border-transparent hover:text-[#182421]'
             }`}
           >
-            <Globe className="w-4 h-4 text-[#657367]" />
+            <Globe className="w-4 h-4 text-[#5F6D61]" />
             Timezones, DST &amp; Edge Cases
           </button>
         </div>
@@ -121,7 +121,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
             <div className="space-y-6">
               {/* Acceptance target banner */}
               <div className="p-4 rounded-md bg-[#E4ECE5] border border-[#657367]/40 flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#657367] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-[#5F6D61] shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h4 className="text-sm font-serif-almanac font-semibold text-[#182421]">
                     Acceptance Target Achieved (Tolerance &le; 2.0 minutes)
@@ -172,9 +172,9 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                           <td className="px-3 py-2 font-sans font-medium text-[#182421]">
                             {b.name}
                           </td>
-                          <td className="px-3 py-2 text-[#657367]">{b.referenceTimeStr}</td>
+                          <td className="px-3 py-2 text-[#5F6D61]">{b.referenceTimeStr}</td>
                           <td className="px-3 py-2 text-[#182421]">{b.computedUtc}</td>
-                          <td className="px-3 py-2 text-[#657367]">
+                          <td className="px-3 py-2 text-[#5F6D61]">
                             +{b.differenceSeconds.toFixed(1)}s ({b.differenceMinutes.toFixed(2)}m)
                           </td>
                           <td className="px-3 py-2">
@@ -222,9 +222,9 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                           <td className="px-3 py-2 font-sans font-medium text-[#182421]">
                             {b.name}
                           </td>
-                          <td className="px-3 py-2 text-[#657367]">{b.referenceUtc}</td>
+                          <td className="px-3 py-2 text-[#5F6D61]">{b.referenceUtc}</td>
                           <td className="px-3 py-2 text-[#182421]">{b.computedUtc}</td>
-                          <td className="px-3 py-2 text-[#657367]">
+                          <td className="px-3 py-2 text-[#5F6D61]">
                             {b.differenceSeconds >= 0 ? '+' : ''}
                             {b.differenceSeconds.toFixed(1)}s ({b.differenceMinutes.toFixed(2)}m)
                           </td>
@@ -265,9 +265,9 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                           <td className="px-3 py-2 font-sans font-medium text-[#182421]">
                             {b.name}
                           </td>
-                          <td className="px-3 py-2 text-[#657367]">{b.referenceUtc}</td>
+                          <td className="px-3 py-2 text-[#5F6D61]">{b.referenceUtc}</td>
                           <td className="px-3 py-2 text-[#182421]">{b.computedUtc}</td>
-                          <td className="px-3 py-2 text-[#657367]">
+                          <td className="px-3 py-2 text-[#5F6D61]">
                             &lt; 1 sec (&plusmn;0.0001°)
                           </td>
                           <td className="px-3 py-2">
@@ -301,7 +301,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                   <span className="font-serif-almanac font-semibold text-[#182421] block">
                     1. Tropical Zodiac System
                   </span>
-                  <p className="text-[#657367]">
+                  <p className="text-[#5F6D61]">
                     0° Aries begins at the vernal equinox point (instant the Sun crosses the celestial equator northbound). The 360° circle is divided into 12 equal 30° sectors.
                   </p>
                 </div>
@@ -310,7 +310,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                   <span className="font-serif-almanac font-semibold text-[#182421] block">
                     2. Moon Phase Quarters
                   </span>
-                  <p className="text-[#657367]">
+                  <p className="text-[#5F6D61]">
                     Calculated from the apparent ecliptic elongation between Moon and Sun: New Moon (0°), First Quarter (90°), Full Moon (180°), Third Quarter (270°).
                   </p>
                 </div>
@@ -319,7 +319,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                   <span className="font-serif-almanac font-semibold text-[#182421] block">
                     3. Sign Ingress Bisection Search
                   </span>
-                  <p className="text-[#657367]">
+                  <p className="text-[#5F6D61]">
                     Whenever the Moon crosses a 30° sector boundary, an adaptive bisection search pinpoints the exact UTC second where &lambda; mod 30° = 0.
                   </p>
                 </div>
@@ -328,7 +328,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                   <span className="font-serif-almanac font-semibold text-[#182421] block">
                     4. Eclipse Search Geometry
                   </span>
-                  <p className="text-[#657367]">
+                  <p className="text-[#5F6D61]">
                     Solar and lunar eclipses are found by searching syzygy instants (elongation 0° and 180°) where the Moon is close to its ecliptic nodes.
                   </p>
                 </div>
@@ -340,7 +340,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
             <div className="space-y-4 text-xs leading-relaxed">
               <div className="p-4 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] space-y-2">
                 <h4 className="font-serif-almanac font-semibold text-sm text-[#182421] flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-[#657367]" />
+                  <Globe className="w-4 h-4 text-[#5F6D61]" />
                   <span>Timezone Transformation Integrity</span>
                 </h4>
                 <p className="text-[#182421]">
@@ -353,7 +353,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                   <span className="font-serif-almanac font-semibold text-[#182421] block mb-1">
                     Fractional Offsets
                   </span>
-                  <p className="text-[#657367]">
+                  <p className="text-[#5F6D61]">
                     Full support for half-hour and 45-minute timezone offsets like Asia/Kolkata (+05:30) and Pacific/Chatham (+12:45).
                   </p>
                 </div>
@@ -361,7 +361,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                   <span className="font-serif-almanac font-semibold text-[#182421] block mb-1">
                     Daylight Saving (DST)
                   </span>
-                  <p className="text-[#657367]">
+                  <p className="text-[#5F6D61]">
                     Leverages the browser's IANA TZ database to seamlessly handle spring-forward and fall-back clock transitions.
                   </p>
                 </div>
@@ -369,7 +369,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                   <span className="font-serif-almanac font-semibold text-[#182421] block mb-1">
                     Midnight Crossings
                   </span>
-                  <p className="text-[#657367]">
+                  <p className="text-[#5F6D61]">
                     Events occurring near midnight correctly shift between adjacent calendar dates depending on your local longitude.
                   </p>
                 </div>
@@ -380,7 +380,7 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
 
         {/* Footer */}
         <div className="p-4 border-t border-[#D8D0BF] bg-[#EBE3D0] flex items-center justify-between text-xs">
-          <span className="text-[#657367]">
+          <span className="text-[#5F6D61]">
             Ephemeris Engine: astronomy-engine@2.1.19
           </span>
           <button

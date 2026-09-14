@@ -47,7 +47,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
           <h2 className="text-2xl font-serif-almanac font-normal text-[#182421] tracking-tight">
             {year} Lunar Ephemeris &amp; Eclipse Almanac
           </h2>
-          <p className="text-xs text-[#657367] font-sans-almanac">
+          <p className="text-xs text-[#5F6D61] font-sans-almanac">
             Annual overview of all Full Moons, New Moons, and Eclipses across {year} ({timezone}). Click any month to view full daily calendar.
           </p>
         </div>
@@ -83,7 +83,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
                 <span className="font-serif-almanac text-base font-semibold text-[#182421] group-hover:text-[#B44732] transition">
                   {monthName} {year}
                 </span>
-                <span className="text-[11px] text-[#657367] group-hover:text-[#182421] flex items-center gap-1 font-medium font-sans-almanac">
+                <span className="text-[11px] text-[#5F6D61] group-hover:text-[#182421] flex items-center gap-1 font-medium font-sans-almanac">
                   Open Grid →
                 </span>
               </div>
@@ -100,7 +100,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
                       <span className="text-base">🌕</span>
                       <div>
                         <span className="font-serif-almanac font-semibold block">Full Moon</span>
-                        <span className="text-[10px] text-[#657367] font-sans-almanac">
+                        <span className="text-[10px] text-[#5F6D61] font-sans-almanac">
                           {fm.localDateString} · {fm.formattedLocalTime}
                         </span>
                       </div>
@@ -121,7 +121,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
                       <span className="text-base">🌑</span>
                       <div>
                         <span className="font-serif-almanac font-semibold block">New Moon</span>
-                        <span className="text-[10px] text-[#657367] font-sans-almanac">
+                        <span className="text-[10px] text-[#5F6D61] font-sans-almanac">
                           {nm.localDateString} · {nm.formattedLocalTime}
                         </span>
                       </div>
@@ -154,7 +154,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
                 ))}
 
                 {monthQuarters.length === 0 && monthEclipses.length === 0 && (
-                  <div className="text-[#657367] text-center py-2 font-sans-almanac">
+                  <div className="text-[#5F6D61] text-center py-2 font-sans-almanac">
                     Standard lunar transitions
                   </div>
                 )}

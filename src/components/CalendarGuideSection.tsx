@@ -33,7 +33,7 @@ const GUIDE_ITEMS: GuideItem[] = [
     shortAnswer: 'The tropical zodiac: twelve equal 30° signs, starting with Aries at the March equinox.',
     details:
       'Moon positions are calculated from Earth’s center using astronomy-engine. The calendar maps those positions to tropical signs rather than constellation boundaries. Daily phase illustrations show the noon snapshot; New Moon, First Quarter, Full Moon, and Third Quarter events have their own calculated times. Open Methodology & Verification in the Learn menu for calculation details.',
-    icon: <BookOpen className="w-4 h-4 text-[#657367]" />,
+    icon: <BookOpen className="w-4 h-4 text-[#5F6D61]" />,
   },
   {
     id: 'timezone-effects',
@@ -41,7 +41,7 @@ const GUIDE_ITEMS: GuideItem[] = [
     shortAnswer: 'The same event can fall on different calendar days in different timezones.',
     details:
       'Choose your timezone under Your sky to display events on the dates and at the times used by your local clock, including daylight saving changes. Changing the timezone also recalculates each daily snapshot for noon in that zone. Eclipse entries mark global peak times; an entry does not mean the eclipse is visible from your location.',
-    icon: <Globe2 className="w-4 h-4 text-[#657367]" />,
+    icon: <Globe2 className="w-4 h-4 text-[#5F6D61]" />,
   },
   {
     id: 'export-guide',
@@ -88,7 +88,7 @@ export const CalendarGuideSection: React.FC = () => {
             <HelpCircle className="w-5 h-5 text-[#B89A62]" />
             <span>Frequently asked questions</span>
           </h2>
-          <p className="text-xs text-[#657367] mt-0.5 font-sans-almanac">
+          <p className="text-xs text-[#5F6D61] mt-0.5 font-sans-almanac">
             Reading the calendar, choosing your settings, and saving your dates.
           </p>
         </div>
@@ -117,12 +117,12 @@ export const CalendarGuideSection: React.FC = () => {
                     <h3 className="font-serif-almanac font-bold text-base leading-snug text-[#182421]">
                       {item.question}
                     </h3>
-                    <p className="text-xs leading-relaxed text-[#657367] mt-1">
+                    <p className="text-xs leading-relaxed text-[#5F6D61] mt-1">
                       {item.shortAnswer}
                     </p>
                   </div>
                 </div>
-                <span className="text-[#657367] p-1 shrink-0">
+                <span className="text-[#5F6D61] p-1 shrink-0">
                   {isOpen ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -145,7 +145,7 @@ export const CalendarGuideSection: React.FC = () => {
       </div>
 
       {/* Prerendered calculation reference disclosure */}
-      <div className="mt-4 pt-3 border-t border-[#D8D0BF] text-[11px] text-[#657367] flex flex-wrap items-center justify-between gap-2">
+      <div className="mt-4 pt-3 border-t border-[#D8D0BF] text-[11px] text-[#5F6D61] flex flex-wrap items-center justify-between gap-2">
         <span>
           <strong>Calculation Engine:</strong> <code>astronomy-engine@2.1.19</code>
         </span>

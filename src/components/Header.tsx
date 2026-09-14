@@ -70,9 +70,9 @@ export const Header: React.FC<HeaderProps> = ({
   }, [hemisphere]);
 
   const views = [
-    { mode: 'calendar', label: 'Month', icon: CalendarIcon },
-    { mode: 'timeline', label: 'Timeline', icon: List },
-    { mode: 'year', label: 'Year', icon: Grid2X2 },
+    { mode: 'calendar', label: 'Calendar', shortLabel: 'Calendar', icon: CalendarIcon },
+    { mode: 'timeline', label: 'Timeline', shortLabel: 'Timeline', icon: List },
+    { mode: 'year', label: 'Year overview', shortLabel: 'Year', icon: Grid2X2 },
   ] as const;
 
   const openLearnItem = (event: React.MouseEvent<HTMLButtonElement>, action: () => void) => {
@@ -90,54 +90,57 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="relative max-w-7xl mx-auto px-3 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 pt-4 pb-3 sm:pt-5 sm:pb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_minmax(18rem,auto)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 py-3 sm:py-3.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <img src="/moon_engraving.jpg" alt="" className="w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-[#B89A62]/60 p-0.5 mix-blend-screen shrink-0" />
+            <img src="/moon_engraving.jpg" alt="" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-[#B89A62]/60 p-0.5 mix-blend-screen shrink-0" />
             <div className="min-w-0">
-              <h1 className="font-serif-almanac text-2xl sm:text-3xl font-semibold leading-none tracking-tight" aria-label="AstroMoon Cal — Moon Phase & Zodiac Calendar">AstroMoon<span aria-hidden="true" className="text-[#B89A62] text-xs align-top ml-1">✦</span></h1>
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-[#D8D0BF] mt-1.5">A lunar almanac</p>
+              <h1 className="font-serif-almanac text-2xl sm:text-[1.7rem] font-semibold leading-none tracking-tight" aria-label="AstroMoon Cal — Moon Phase & Zodiac Calendar">AstroMoon<span aria-hidden="true" className="text-[#B89A62] text-xs align-top ml-1">✦</span></h1>
+              <p className="text-xs uppercase tracking-[0.16em] text-[#D8D0BF] mt-1">A lunar almanac</p>
             </div>
           </div>
 
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:justify-self-end lg:col-start-3 lg:row-start-1">
             <button id="open-subscribe-btn" aria-label="Subscribe to the live AstroMoon calendar" onClick={onOpenSubscribeModal}
-              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-full border border-[#B89A62]/70 bg-[#182421]/70 px-3 text-xs font-semibold text-[#F3EDDF] transition hover:bg-[#253631] active:scale-95 sm:text-sm">
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-full border border-[#B89A62]/70 bg-[#182421]/70 px-3 text-sm font-semibold text-[#F3EDDF] transition hover:bg-[#253631] active:scale-[0.98]">
               <Rss size={16} /><span>Subscribe</span>
             </button>
             <button id="open-export-btn" aria-label="Export Calendar as ICS or PDF" onClick={onOpenExportModal}
-              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-full bg-[#B44732] px-4 text-xs font-semibold text-white transition hover:bg-[#9E3D2A] active:scale-95 sm:text-sm">
+              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-full bg-[#B44732] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9E3D2A] active:scale-[0.98]">
               <Download size={16} /><span>Export</span>
             </button>
           </div>
 
-          <div className="sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[11px] text-[#D8D0BF]"
-            title={`Current Moon: ${Math.round(liveMoon.phase.fraction * 100)}% illuminated. Geocentric longitude ${liveMoon.lon.toFixed(2)}°.`}>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="text-[#B89A62] text-[9px] uppercase tracking-wider mr-0.5">Now</span>
+          <div
+            className="sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex min-h-10 min-w-0 flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-full border border-[#B89A62]/35 bg-[#101C19]/55 px-3 py-1.5 text-[13px] text-[#D8D0BF]"
+          >
+            <span className="sr-only">Current Moon: {liveMoon.phase.name}, {Math.round(liveMoon.phase.fraction * 100)} percent illuminated, Moon in {liveMoon.sign.name} at {liveMoon.degrees} degrees {liveMoon.minutes} minutes. Geocentric longitude {liveMoon.lon.toFixed(2)} degrees.</span>
+            <span aria-hidden="true" className="text-[#B89A62] text-[10px] font-semibold uppercase tracking-[0.16em]">Now</span>
+            <span aria-hidden="true" className="inline-flex items-center gap-1.5">
               <MoonVisual phaseAngle={liveMoon.phase.phaseAngle} fraction={liveMoon.phase.fraction} hemisphere={hemisphere} size={20} />
-              <span>{liveMoon.phase.name}</span>
-              <span className="text-[#B89A62]">{Math.round(liveMoon.phase.fraction * 100)}%</span>
+              <span className="text-[#F3EDDF]">{liveMoon.phase.name}</span>
+              <span className="font-semibold text-[#B89A62]">{Math.round(liveMoon.phase.fraction * 100)}%</span>
             </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className="text-[#B89A62]">{liveMoon.sign.symbol}</span>
+            <span aria-hidden="true" className="h-3 w-px bg-[#B89A62]/45" />
+            <span aria-hidden="true" className="inline-flex items-center gap-1.5">
+              <span className="text-[#B89A62]">{liveMoon.sign.symbol}</span>
               <span>{liveMoon.sign.name} {liveMoon.degrees}°{liveMoon.minutes}'</span>
             </span>
           </div>
         </div>
 
-        <div className="flex items-stretch justify-between gap-2 border-t border-[#B89A62]/20">
-          <nav aria-label="Calendar view modes" className="flex flex-1 sm:flex-none sm:gap-4">
-            {views.map(({ mode, label, icon: Icon }) => (
-              <button key={mode} id={`view-${mode}-btn`} aria-pressed={viewMode === mode} aria-label={`Switch to ${label} view`} onClick={() => onViewModeChange(mode)}
-                className={`relative flex flex-1 sm:flex-none min-h-12 items-center justify-center gap-1.5 px-1.5 sm:px-4 text-xs sm:text-sm transition ${viewMode === mode ? 'text-[#F3EDDF]' : 'text-[#D8D0BF]/75 hover:text-[#F3EDDF]'}`}>
-                <Icon size={15} className={viewMode === mode ? 'text-[#B89A62]' : ''} />
-                <span>{label}</span>
-                {viewMode === mode && <span aria-hidden="true" className="absolute bottom-0 inset-x-2 sm:inset-x-4 h-0.5 rounded-full bg-[#B89A62]" />}
+        <div className="flex items-end border-t border-[#B89A62]/25">
+          <nav aria-label="Calendar views" className="flex min-w-0 flex-1 sm:flex-none">
+            {views.map(({ mode, label, shortLabel, icon: Icon }) => (
+              <button key={mode} id={`view-${mode}-btn`} aria-pressed={viewMode === mode} onClick={() => onViewModeChange(mode)}
+                className={`relative flex min-h-12 min-w-0 flex-1 items-center justify-center gap-1 rounded-t-md border-x border-t px-1 text-[11px] font-medium transition sm:flex-none sm:gap-1.5 sm:px-4 sm:text-sm ${viewMode === mode ? 'translate-y-px border-[#B89A62]/45 bg-[#F3EDDF] text-[#182421] shadow-[inset_0_2px_0_#B89A62]' : 'border-transparent text-[#D8D0BF] hover:bg-white/5 hover:text-[#F3EDDF]'}`}>
+                <Icon size={16} className={viewMode === mode ? 'text-[#86662E]' : 'text-[#B89A62]'} />
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{shortLabel}</span>
               </button>
             ))}
           </nav>
 
-          <details ref={learnMenuRef} className="relative group self-center"
+          <details ref={learnMenuRef} className="relative group border-l border-[#B89A62]/25"
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
                 event.preventDefault();
@@ -145,8 +148,8 @@ export const Header: React.FC<HeaderProps> = ({
                 event.currentTarget.querySelector('summary')?.focus();
               }
             }}>
-            <summary className="list-none [&::-webkit-details-marker]:hidden min-h-11 flex items-center gap-1.5 px-2 sm:px-3 text-xs text-[#D8D0BF] cursor-pointer rounded hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-[#B89A62]">
-              <BookOpen size={15} className="text-[#B89A62]" /><span>Learn</span><ChevronDown size={12} className="group-open:rotate-180 transition" />
+            <summary className="list-none [&::-webkit-details-marker]:hidden min-h-12 flex items-center gap-1 px-2 sm:gap-1.5 sm:px-4 text-[11px] sm:text-sm text-[#D8D0BF] cursor-pointer rounded-t-md hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-[#B89A62]">
+              <BookOpen size={15} className="hidden text-[#B89A62] sm:inline-block" /><span>Learn</span><ChevronDown size={12} className="group-open:rotate-180 transition" />
             </summary>
             <div className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-2rem)] p-1.5 rounded-lg border border-[#D8D0BF] bg-[#FAF7F0] text-[#182421] shadow-xl">
               <button id="desktop-info-btn" onClick={(event) => openLearnItem(event, onOpenInfoModal)}
@@ -155,7 +158,7 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
               <button id="desktop-methodology-btn" onClick={(event) => openLearnItem(event, onOpenMethodologyModal)}
                 className="flex w-full min-h-12 items-center gap-3 rounded-md p-3 text-left text-sm hover:bg-[#EAE2D0]">
-                <ShieldCheck size={18} className="text-[#657367]" /><span>How we calculate</span>
+                <ShieldCheck size={18} className="text-[#5F6D61]" /><span>How we calculate</span>
               </button>
             </div>
           </details>
