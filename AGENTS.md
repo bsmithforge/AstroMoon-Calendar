@@ -19,7 +19,7 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 | `npm run build` | Build the static app into `dist/`, then bundle the feed function (`npm run build:api`) |
 | `npm run preview` | Serve the built app locally (no `api/`) |
 
-There is no formatter configuration or CI workflow. A successful Vite build does not replace the separate type check.
+There is no formatter configuration. `.github/workflows/ci.yml` runs lint, test, and build on pushes to `main` and pull requests. A successful Vite build does not replace the separate type check.
 
 The app needs no API keys or `.env` file to run. The `@/` alias resolves to the repository root, not `src/`.
 

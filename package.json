@@ -1,7 +1,21 @@
 {
   "name": "astromoon-calendar",
-  "private": true,
   "version": "1.0.0",
+  "description": "Moon phase and zodiac calendar computed in the browser, with ICS, live webcal feed, and PDF export.",
+  "private": true,
+  "license": "MIT",
+  "author": {
+    "name": "Brody Smith",
+    "url": "https://smiths-forge.ca/"
+  },
+  "homepage": "https://astromoon.ca/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bsmithforge/AstroMoon-Calendar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bsmithforge/AstroMoon-Calendar/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"

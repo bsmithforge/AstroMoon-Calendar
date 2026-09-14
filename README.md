@@ -1,5 +1,8 @@
 # AstroMoon Calendar
 
+[![CI](https://github.com/bsmithforge/AstroMoon-Calendar/actions/workflows/ci.yml/badge.svg)](https://github.com/bsmithforge/AstroMoon-Calendar/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-B89A62.svg)](LICENSE)
+
 **Live at [astromoon.ca](https://astromoon.ca/)**
 
 A Moon phase and zodiac calendar that computes everything in your browser: exact New, Quarter, and Full Moon times, tropical Moon sign ingresses to the second, solar and lunar eclipse peaks, and a daily noon Moon sign snapshot, all shown in the timezone you choose.
@@ -38,6 +41,24 @@ npm run lint     # tsc --noEmit
 npm run build    # static build to dist/
 ```
 
-Stack: React 19, TypeScript, Vite 6, Tailwind CSS 4, jsPDF. Deployed on Vercel: the feed handler in `server/calendar.ts` is bundled by esbuild during `npm run build` and exposed through `api/calendar.js`; `vercel.json` sets caching headers. See [AGENTS.md](AGENTS.md) for conventions and domain rules.
+Stack: React 19, TypeScript, Vite 6, Tailwind CSS 4, jsPDF. No database, no auth, no API keys. See [AGENTS.md](AGENTS.md) for the code map, domain rules, and conventions, and [CONTRIBUTING.md](CONTRIBUTING.md) if you'd like to send a change.
 
-Made by [Smith's Forge](https://smiths-forge.ai.studio/).
+## Run your own
+
+Fork it and import the fork into [Vercel](https://vercel.com/new) with the Vite preset. No environment variables are required; pushes to `main` deploy. The feed handler in `server/calendar.ts` is bundled by esbuild during `npm run build` and exposed through `api/calendar.js`, and `vercel.json` sets caching headers. The subscription URL is built from the page origin, so the feed works on whatever domain you deploy to.
+
+Things you'll want to change for your own deployment:
+
+- `index.html`: `<title>`, canonical URL, Open Graph / Twitter URLs, and the JSON-LD block
+- `public/robots.txt` and `public/sitemap.xml`: site URL
+- `public/og-image.jpg`, `public/masthead_banner.jpg`, `public/moon_engraving.jpg`: artwork
+- `src/App.tsx`: the "Made by" footer link
+- `src/utils/icsExport.ts` and `src/utils/subscription.ts`: calendar name and `PRODID`
+
+Any static host works for the app itself. Only the live feed needs a serverless function; ICS download and PDF export run entirely in the browser.
+
+## License
+
+[MIT](LICENSE). Astronomical calculations use [astronomy-engine](https://github.com/cosinekitty/astronomy) (MIT). Sign and phase interpretations are traditional and offered for interest only.
+
+Made by [Brody Smith](https://smiths-forge.ca/).
