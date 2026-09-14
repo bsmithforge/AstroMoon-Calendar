@@ -123,7 +123,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-6 py-2.5 sm:py-3">
           <div className="flex min-w-0 items-center gap-2">
-            <button id="prev-month-btn" aria-label={isYearView ? 'Previous year' : 'Previous month'} onClick={handlePrevPeriod} className="w-11 h-11 flex items-center justify-center shrink-0 rounded-full border border-[#D8D0BF] hover:bg-[#EAE1CF] hover:border-[#B89A62] transition">
+            <button id="prev-month-btn" aria-label={isYearView ? 'Previous year' : 'Previous month'} onClick={handlePrevPeriod} className="w-11 h-11 flex items-center justify-center shrink-0 rounded-md border border-[#D8D0BF] hover:bg-[#EAE1CF] hover:border-[#B89A62] transition">
               <ChevronLeft size={18} />
             </button>
             <div className="flex flex-1 min-w-0 items-center justify-center gap-0.5 md:gap-2">
@@ -140,7 +140,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 {Array.from({ length: 201 }, (_, i) => 1900 + i).map((year) => <option key={year} value={year}>{year}</option>)}
               </select>
             </div>
-            <button id="next-month-btn" aria-label={isYearView ? 'Next year' : 'Next month'} onClick={handleNextPeriod} className="w-11 h-11 flex items-center justify-center shrink-0 rounded-full border border-[#D8D0BF] hover:bg-[#EAE1CF] hover:border-[#B89A62] transition">
+            <button id="next-month-btn" aria-label={isYearView ? 'Next year' : 'Next month'} onClick={handleNextPeriod} className="w-11 h-11 flex items-center justify-center shrink-0 rounded-md border border-[#D8D0BF] hover:bg-[#EAE1CF] hover:border-[#B89A62] transition">
               <ChevronRight size={18} />
             </button>
           </div>
@@ -149,14 +149,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             <button id="today-btn" aria-label={isYearView ? 'Go to the current year' : 'Reset to the current month and day'} onClick={handleResetCurrentPeriod}
               className="min-h-11 px-2 text-xs text-[#B44732] font-semibold underline decoration-[#B44732]/30 underline-offset-4 hover:decoration-[#B44732]">{isYearView ? 'Current year' : 'Today'}</button>
             {!isYearView && (
-              <div role="group" aria-label="Calendar range" className="flex rounded-full border border-[#D8D0BF] bg-[#EDE6D6]/70 p-0.5">
+              <div role="group" aria-label="Calendar range" className="flex rounded-md border border-[#D8D0BF] bg-[#EDE6D6]/70 p-0.5">
                 {([
                   { preset: 'month', id: 'range-month-btn', label: '1 month' },
                   { preset: 'threeMonths', id: 'range-3months-btn', label: '3 months' },
                   { preset: 'year', id: 'range-year-btn', label: 'Full year' },
                 ] as const).map(({ preset, id, label }) => (
                   <button key={preset} id={id} aria-pressed={activeRange === preset} onClick={() => onRangePresetChange(preset)}
-                    className={`min-h-11 px-2.5 sm:px-3 text-xs rounded-full transition ${activeRange === preset ? 'text-[#182421] font-semibold bg-[#FAF7F0] shadow-sm' : 'text-[#5F6D61] hover:bg-[#FAF7F0]/65'}`}>{label}</button>
+                    className={`min-h-11 px-2.5 sm:px-3 text-xs rounded-sm transition ${activeRange === preset ? 'text-[#182421] font-semibold bg-[#FAF7F0] shadow-sm' : 'text-[#5F6D61] hover:bg-[#FAF7F0]/65'}`}>{label}</button>
                 ))}
               </div>
             )}
@@ -172,7 +172,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   <label key={key} htmlFor={id} className="group relative flex min-h-12 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 transition hover:bg-[#EDE6D6]/70 sm:px-2">
                     <input id={id} type="checkbox" aria-describedby={`${id}-description`} checked={filters[key]} onChange={(e) => onFilterChange({ [key]: e.target.checked })} className="peer sr-only" />
                     <span style={{ color: filters[key] ? color : '#5F6D61', backgroundColor: filters[key] ? background : 'transparent' }}
-                      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition group-hover:scale-105 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-[#182421] ${filters[key] ? 'border-transparent' : 'border-[#D8D0BF] opacity-70'}`}>
+                      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition group-hover:scale-105 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-[#182421] ${filters[key] ? 'border-transparent' : 'border-[#D8D0BF] opacity-70'}`}>
                       {icon}
                       {filters[key] && <span className="absolute -bottom-0.5 -right-0.5 flex w-3.5 h-3.5 items-center justify-center rounded-full bg-[#FAF7F0] border border-current"><Check size={9} strokeWidth={3} /></span>}
                     </span>
@@ -192,7 +192,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         </div>
 
         <div id="sky-settings" hidden={!skySettingsOpen} className="pb-4 pt-2">
-          <div className="grid gap-4 sm:grid-cols-2 rounded-xl bg-[#EDE6D6] p-4">
+          <div className="grid gap-4 sm:grid-cols-2 rounded-lg bg-[#EDE6D6] p-4">
             <label className="block min-w-0" htmlFor="timezone-select">
               <span className="block text-sm font-serif-almanac font-semibold mb-1.5">Local time</span>
               <select id="timezone-select" value={filters.timezone} onChange={(e) => onFilterChange({ timezone: e.target.value })}
@@ -206,7 +206,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               <div className="flex gap-2">
                 {(['northern', 'southern'] as const).map((hemisphere) => (
                   <button key={hemisphere} id={hemisphere === 'northern' ? 'hemi-north-btn' : 'hemi-south-btn'} aria-label={`${hemisphere === 'northern' ? 'Northern' : 'Southern'} hemisphere sky orientation`} aria-pressed={filters.hemisphere === hemisphere} onClick={() => onFilterChange({ hemisphere })}
-                    className={`flex flex-1 min-h-11 items-center justify-center gap-2 rounded-full border text-xs transition ${filters.hemisphere === hemisphere ? 'border-[#657367] bg-[#FAF7F0] text-[#182421]' : 'border-transparent text-[#5F6D61] hover:bg-[#FAF7F0]/60'}`}>
+                    className={`flex flex-1 min-h-11 items-center justify-center gap-2 rounded-md border text-xs transition ${filters.hemisphere === hemisphere ? 'border-[#657367] bg-[#FAF7F0] text-[#182421]' : 'border-transparent text-[#5F6D61] hover:bg-[#FAF7F0]/60'}`}>
                     <MoonVisual phaseAngle={90} fraction={0.5} hemisphere={hemisphere} size={21} />
                     {hemisphere === 'northern' ? 'North' : 'South'}
                     {filters.hemisphere === hemisphere && <Check size={12} />}

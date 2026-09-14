@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Calendar as CalendarIcon,
+  Check,
   Download,
   Grid2X2,
   BookOpen,
@@ -9,6 +10,7 @@ import {
   List,
   ShieldCheck,
   Rss,
+  Share2,
 } from 'lucide-react';
 import { Hemisphere, ViewMode } from '../types';
 import { MoonVisual } from './MoonVisual';
@@ -35,6 +37,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMethodologyModal,
 }) => {
   const learnMenuRef = useRef<HTMLDetailsElement>(null);
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const shareResetRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(shareResetRef.current), []);
 
   useEffect(() => {
     const dismissLearnMenu = (event: Event) => {
@@ -69,11 +75,44 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, [hemisphere]);
 
+  // Icon-only squares on phones; icon + label from the sm breakpoint up.
+  const actionBase = 'inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-md text-sm font-semibold transition active:scale-[0.98] sm:w-auto sm:px-3';
+  const secondaryAction = `${actionBase} border text-[#F3EDDF] hover:border-[#B89A62] hover:bg-[#253631]`;
+  const secondaryIdle = 'border-[#B89A62]/60 bg-[#101C19]/50';
+
   const views = [
     { mode: 'calendar', label: 'Calendar', shortLabel: 'Calendar', icon: CalendarIcon },
     { mode: 'timeline', label: 'Timeline', shortLabel: 'Timeline', icon: List },
     { mode: 'year', label: 'Year overview', shortLabel: 'Year', icon: Grid2X2 },
   ] as const;
+
+  // The URL already carries ?year&month, so sharing it reopens the same month.
+  // Use the native share sheet where it exists and fall back to copying the link.
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareData = { title: document.title, text: 'Moon phases, zodiac signs and eclipses — AstroMoon Cal', url };
+
+    if (typeof navigator.share === 'function' && (!navigator.canShare || navigator.canShare(shareData))) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        // Otherwise fall through to the clipboard.
+      }
+    }
+
+    let status: 'copied' | 'failed' = 'failed';
+    try {
+      await navigator.clipboard.writeText(url);
+      status = 'copied';
+    } catch {
+      status = 'failed';
+    }
+    setShareStatus(status);
+    window.clearTimeout(shareResetRef.current);
+    shareResetRef.current = window.setTimeout(() => setShareStatus('idle'), 2500);
+  };
 
   const openLearnItem = (event: React.MouseEvent<HTMLButtonElement>, action: () => void) => {
     const menu = event.currentTarget.closest('details');
@@ -90,28 +129,35 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="relative max-w-7xl mx-auto px-3 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_minmax(18rem,auto)_minmax(0,1fr)] items-center gap-x-4 gap-y-2.5 py-3 sm:py-3.5">
-          <div className="flex min-w-0 items-center gap-2.5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_minmax(18rem,auto)_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5 py-3 sm:gap-x-4 sm:py-3.5">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
             <img src="/moon_engraving.jpg" alt="" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-[#B89A62]/60 p-0.5 mix-blend-screen shrink-0" />
             <div className="min-w-0">
-              <h1 className="font-serif-almanac text-2xl sm:text-[1.7rem] font-semibold leading-none tracking-tight" aria-label="AstroMoon Cal — Moon Phase & Zodiac Calendar">AstroMoon<span aria-hidden="true" className="text-[#B89A62] text-xs align-top ml-1">✦</span></h1>
-              <p className="text-xs uppercase tracking-[0.16em] text-[#D8D0BF] mt-1">A lunar almanac</p>
+              <h1 className="font-serif-almanac text-[1.45rem] sm:text-[1.7rem] font-semibold leading-none tracking-tight" aria-label="AstroMoon Cal — Moon Phase & Zodiac Calendar">AstroMoon<span aria-hidden="true" className="text-[#B89A62] text-xs align-top ml-1">✦</span></h1>
+              <p className="text-[10px] tracking-[0.14em] sm:text-xs sm:tracking-[0.16em] uppercase text-[#D8D0BF] mt-1">A lunar almanac</p>
             </div>
           </div>
 
-          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:justify-self-end lg:col-start-3 lg:row-start-1">
-            <button id="open-subscribe-btn" aria-label="Subscribe to the live AstroMoon calendar" onClick={onOpenSubscribeModal}
-              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-full border border-[#B89A62]/70 bg-[#182421]/70 px-3 text-sm font-semibold text-[#F3EDDF] transition hover:bg-[#253631] active:scale-[0.98]">
-              <Rss size={16} /><span>Subscribe</span>
+          <div role="group" aria-label="Share, subscribe and export" className="flex items-center justify-self-end gap-1.5 sm:gap-2 lg:col-start-3 lg:row-start-1">
+            <button id="share-btn" type="button" aria-label={shareStatus === 'copied' ? 'Link copied' : 'Share this calendar'} onClick={handleShare}
+              className={`${secondaryAction} ${shareStatus === 'copied' ? 'border-[#B89A62] bg-[#253631]' : secondaryIdle}`}>
+              {shareStatus === 'copied' ? <Check size={17} className="text-[#B89A62]" /> : <Share2 size={17} />}
+              <span className="hidden sm:inline">{shareStatus === 'copied' ? 'Copied' : 'Share'}</span>
             </button>
-            <button id="open-export-btn" aria-label="Export Calendar as ICS or PDF" onClick={onOpenExportModal}
-              className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-full bg-[#B44732] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9E3D2A] active:scale-[0.98]">
-              <Download size={16} /><span>Export</span>
+            <button id="open-subscribe-btn" type="button" aria-label="Subscribe to the live AstroMoon calendar" onClick={onOpenSubscribeModal} className={`${secondaryAction} ${secondaryIdle}`}>
+              <Rss size={17} /><span className="hidden sm:inline">Subscribe</span>
             </button>
+            <button id="open-export-btn" type="button" aria-label="Export Calendar as ICS or PDF" onClick={onOpenExportModal}
+              className={`${actionBase} bg-[#B44732] text-white shadow-sm hover:bg-[#9E3D2A]`}>
+              <Download size={17} /><span className="hidden sm:inline">Export</span>
+            </button>
+            <span role="status" aria-live="polite" className="sr-only">
+              {shareStatus === 'copied' ? 'Link copied to clipboard' : shareStatus === 'failed' ? 'Could not share or copy the link' : ''}
+            </span>
           </div>
 
           <div
-            className="sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex min-h-10 min-w-0 flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-full border border-[#B89A62]/35 bg-[#101C19]/55 px-3 py-1.5 text-[13px] text-[#D8D0BF]"
+            className="col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex min-h-10 min-w-0 flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-md border border-[#B89A62]/35 bg-[#101C19]/55 px-3 py-1.5 text-[13px] text-[#D8D0BF]"
           >
             <span className="sr-only">Current Moon: {liveMoon.phase.name}, {Math.round(liveMoon.phase.fraction * 100)} percent illuminated, Moon in {liveMoon.sign.name} at {liveMoon.degrees} degrees {liveMoon.minutes} minutes. Geocentric longitude {liveMoon.lon.toFixed(2)} degrees.</span>
             <span aria-hidden="true" className="text-[#B89A62] text-[10px] font-semibold uppercase tracking-[0.16em]">Now</span>

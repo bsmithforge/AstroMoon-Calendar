@@ -86,7 +86,7 @@ export const ZodiacGuideModal: React.FC<ZodiacGuideModalProps> = ({
                   </div>
 
                   <div className="text-right text-[11px]">
-                    <span className="px-2 py-0.5 rounded-full font-medium bg-[#E4ECE5] text-[#182421] border border-[#657367]/40">
+                    <span className="px-2 py-0.5 rounded-sm font-medium bg-[#E4ECE5] text-[#182421] border border-[#657367]/40">
                       {sign.element}
                     </span>
                     <span className="text-[#5F6D61] block text-[10px] mt-0.5">

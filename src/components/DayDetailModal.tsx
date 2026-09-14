@@ -158,12 +158,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                 {(day.hasMajorQuarter || day.hasEclipse) && (
                   <div className="flex flex-wrap gap-2">
                     {day.hasMajorQuarter && day.quarterType && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#B89A62]/25 text-[#E6D4B2] border border-[#B89A62]/40">
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-sm bg-[#B89A62]/25 text-[#E6D4B2] border border-[#B89A62]/40">
                         {day.quarterType}
                       </span>
                     )}
                     {day.hasEclipse && day.eclipseInfo && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#B44732]/30 text-[#F5B2A6] border border-[#B44732]/50">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-sm bg-[#B44732]/30 text-[#F5B2A6] border border-[#B44732]/50">
                         ☀️ {day.eclipseInfo.name}
                       </span>
                     )}
@@ -283,10 +283,10 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#E4ECE5] text-[#182421] border border-[#657367]/40">
+                    <span className="text-xs px-2 py-0.5 rounded-sm bg-[#E4ECE5] text-[#182421] border border-[#657367]/40">
                       {primarySign.element}
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#EAE2D0] text-[#182421] border border-[#D8D0BF]">
+                    <span className="text-xs px-2 py-0.5 rounded-sm bg-[#EAE2D0] text-[#182421] border border-[#D8D0BF]">
                       {primarySign.modality}
                     </span>
                   </div>
