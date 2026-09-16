@@ -248,13 +248,15 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 whitespace-nowrap min-h-11 sm:min-h-0 px-3 sm:px-4 py-2 rounded-t-md transition-colors border-b-2 flex items-center gap-2 ${
+                className={`flex-1 sm:flex-none min-w-0 sm:shrink-0 justify-center sm:justify-start whitespace-nowrap min-h-11 sm:min-h-0 px-2 sm:px-4 py-2 rounded-t-md transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 ${
                   isActive
                     ? 'text-[#182421] border-[#B44732] bg-[#FAF7F0] font-semibold'
                     : 'text-[#5F6D61] border-transparent hover:text-[#182421]'
                 }`}
               >
-                {tab.icon}
+                {/* Wrapper span: the global `svg { display }` rule in index.css is
+                    unlayered, so `hidden` on the icon itself would lose. */}
+                <span className="hidden min-[360px]:inline-flex shrink-0">{tab.icon}</span>
                 <span className="sm:hidden">{tab.short}</span>
                 <span className="hidden sm:inline">{tab.full}</span>
               </button>
