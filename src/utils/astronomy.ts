@@ -150,6 +150,28 @@ export function getMoonEclipticLongitude(date: Date): number {
   return normalizeDegrees(geo.lon);
 }
 
+export type MoonPhaseName =
+  | 'New Moon'
+  | 'Waxing Crescent'
+  | 'First Quarter'
+  | 'Waxing Gibbous'
+  | 'Full Moon'
+  | 'Waning Gibbous'
+  | 'Third Quarter'
+  | 'Waning Crescent';
+
+/** Traditional interpretation for each of the eight phase categories. */
+export const MOON_PHASE_MEANINGS: Record<MoonPhaseName, string> = {
+  'New Moon': 'New beginnings, intention setting, quiet contemplation, seed planting.',
+  'Waxing Crescent': 'Emergence, early momentum, nurturing commitments, fresh hope.',
+  'First Quarter': 'Decision-making, overcoming initial obstacles, commitment, action.',
+  'Waxing Gibbous': 'Refinement, adjustment, anticipation, patience before culmination.',
+  'Full Moon': 'Culmination, illumination, emotional clarity, celebration, harvesting.',
+  'Waning Gibbous': 'Gratitude, dissemination, sharing wisdom, emotional release.',
+  'Third Quarter': 'Forgiveness, conscious clearing, closure, letting go of what no longer serves.',
+  'Waning Crescent': 'Rest, surrender, restorative stillness, intuitive dreamwork, rejuvenation.',
+};
+
 /**
  * Get lunar phase information for any instant.
  * - phaseAngle in [0, 360)
@@ -164,7 +186,7 @@ export function getMoonPhaseInfo(
   const illum = Astronomy.Illumination(Astronomy.Body.Moon, date);
   const fraction = illum.phase_fraction;
 
-  let name = '';
+  let name: MoonPhaseName;
   let emoji = '🌑';
   let southernEmoji = '🌑';
   let isQuarter = false;
@@ -174,8 +196,6 @@ export function getMoonPhaseInfo(
     | 'Full Moon'
     | 'Third Quarter'
     | undefined = undefined;
-  let meaning = '';
-
   // 8-phase categorization
   if (phaseAngle >= 354 || phaseAngle < 6) {
     name = 'New Moon';
@@ -183,56 +203,40 @@ export function getMoonPhaseInfo(
     southernEmoji = '🌑';
     isQuarter = true;
     quarterName = 'New Moon';
-    meaning =
-      'New beginnings, intention setting, quiet contemplation, seed planting.';
   } else if (phaseAngle >= 6 && phaseAngle < 84) {
     name = 'Waxing Crescent';
     emoji = '🌒';
     southernEmoji = '🌘';
-    meaning =
-      'Emergence, early momentum, nurturing commitments, fresh hope.';
   } else if (phaseAngle >= 84 && phaseAngle < 96) {
     name = 'First Quarter';
     emoji = '🌓';
     southernEmoji = '🌗';
     isQuarter = true;
     quarterName = 'First Quarter';
-    meaning =
-      'Decision-making, overcoming initial obstacles, commitment, action.';
   } else if (phaseAngle >= 96 && phaseAngle < 174) {
     name = 'Waxing Gibbous';
     emoji = '🌔';
     southernEmoji = '🌖';
-    meaning =
-      'Refinement, adjustment, anticipation, patience before culmination.';
   } else if (phaseAngle >= 174 && phaseAngle < 186) {
     name = 'Full Moon';
     emoji = '🌕';
     southernEmoji = '🌕';
     isQuarter = true;
     quarterName = 'Full Moon';
-    meaning =
-      'Culmination, illumination, emotional clarity, celebration, harvesting.';
   } else if (phaseAngle >= 186 && phaseAngle < 264) {
     name = 'Waning Gibbous';
     emoji = '🌖';
     southernEmoji = '🌔';
-    meaning =
-      'Gratitude, dissemination, sharing wisdom, emotional release.';
   } else if (phaseAngle >= 264 && phaseAngle < 276) {
     name = 'Third Quarter';
     emoji = '🌗';
     southernEmoji = '🌓';
     isQuarter = true;
     quarterName = 'Third Quarter';
-    meaning =
-      'Forgiveness, conscious clearing, closure, letting go of what no longer serves.';
   } else {
     name = 'Waning Crescent';
     emoji = '🌘';
     southernEmoji = '🌒';
-    meaning =
-      'Rest, surrender, restorative stillness, intuitive dreamwork, rejuvenation.';
   }
 
   return {
@@ -243,7 +247,7 @@ export function getMoonPhaseInfo(
     fraction,
     isQuarter,
     quarterName,
-    meaning,
+    meaning: MOON_PHASE_MEANINGS[name],
   };
 }
 
