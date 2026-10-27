@@ -12,6 +12,12 @@ import {
   generateRangeDataset,
   generateMonthData,
 } from '../utils/astronomy';
+import {
+  countMonthsSpanned,
+  getCalendarPdfRangeError,
+  getDateRangeError,
+  getRecordExportRangeError,
+} from '../utils/dateRange';
 import { downloadIcsFile, generateIcsPayload } from '../utils/icsExport';
 import { CalendarGrid } from './CalendarGrid';
 
@@ -124,24 +130,11 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
     ]
   );
 
-  const validDate = (value: string) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-    const date = new Date(`${value}T12:00:00Z`);
-    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
-  };
-  const rangeError = !validDate(startDate) || !validDate(endDate)
-    ? 'Enter a valid start and end date.'
-    : startDate > endDate
-    ? 'End date must be on or after start date.'
-    : null;
   const [startYear, startMonth] = startDate.split('-').map(Number);
-  const [endYear, endMonth] = endDate.split('-').map(Number);
-  const monthCount = (endYear - startYear) * 12 + endMonth - startMonth + 1;
-  const calendarError = rangeError || (monthCount > 24 ? 'Calendar PDFs support up to 24 whole months. Choose a shorter range.' : null);
-  const recordRangeError = rangeError || (
-    (Date.parse(`${endDate}T12:00:00Z`) - Date.parse(`${startDate}T12:00:00Z`)) / 86400000 >= 3660
-      ? 'ICS and data-table exports support up to 3,660 days per download. Choose a shorter range.' : null
-  );
+  const monthCount = countMonthsSpanned(startDate, endDate);
+  const rangeError = getDateRangeError(startDate, endDate);
+  const calendarError = getCalendarPdfRangeError(startDate, endDate);
+  const recordRangeError = getRecordExportRangeError(startDate, endDate);
 
   // Validate before computing grids, including partially edited date fields.
   const { exportMonths, calculationError } = useMemo(() => {
