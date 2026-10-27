@@ -510,6 +510,40 @@ export function findIngressesInRange(
 }
 
 /**
+ * UTC search window for an inclusive local date range (YYYY-MM-DD):
+ * 00:00:00 local on the start date to 00:00:00 local on the day after the end date.
+ * Callers validate the dates first (see dateRange.ts).
+ */
+export function getLocalDateRangeUtc(
+  startDateStr: string,
+  endDateStr: string,
+  timeZone: string
+): { startUtc: Date; endUtc: Date } {
+  const [startYear, startMonth, startDay] = startDateStr.split('-').map((n) => parseInt(n, 10));
+  const [endYear, endMonth, endDay] = endDateStr.split('-').map((n) => parseInt(n, 10));
+
+  const startUtc = getUtcForLocalTime(startYear, startMonth, startDay, 0, 0, 0, timeZone);
+
+  // Day after last date: step from local noon so DST shifts can't skip or repeat a date
+  const endNoonUtc = getUtcForLocalTime(endYear, endMonth, endDay, 12, 0, 0, timeZone);
+  const nextDayLocal = getLocalDateComponents(
+    new Date(endNoonUtc.getTime() + 24 * 3600 * 1000),
+    timeZone
+  );
+  const endUtc = getUtcForLocalTime(
+    nextDayLocal.year,
+    nextDayLocal.month,
+    nextDayLocal.day,
+    0,
+    0,
+    0,
+    timeZone
+  );
+
+  return { startUtc, endUtc };
+}
+
+/**
  * Generates the unified structured astronomical dataset for a given inclusive
  * calendar date range (startDate to endDate, YYYY-MM-DD) in the specified timezone.
  *
@@ -553,36 +587,9 @@ export function generateRangeDataset(
       };
     }
 
-    // Interval: start of first date (00:00:00 local) to start of day after last date (00:00:00 local)
-    const rangeStartUtc = getUtcForLocalTime(
-      startYear,
-      startMonth,
-      startDay,
-      0,
-      0,
-      0,
-      timeZone
-    );
-
-    // Day after last date:
-    const tempEndUtc = getUtcForLocalTime(
-      endYear,
-      endMonth,
-      endDay,
-      12,
-      0,
-      0,
-      timeZone
-    );
-    const nextDayUtc = new Date(tempEndUtc.getTime() + 24 * 3600 * 1000);
-    const nextDayLocal = getLocalDateComponents(nextDayUtc, timeZone);
-    const rangeEndUtc = getUtcForLocalTime(
-      nextDayLocal.year,
-      nextDayLocal.month,
-      nextDayLocal.day,
-      0,
-      0,
-      0,
+    const { startUtc: rangeStartUtc, endUtc: rangeEndUtc } = getLocalDateRangeUtc(
+      startDateStr,
+      endDateStr,
       timeZone
     );
 
