@@ -7,7 +7,8 @@ import {
   AlmanacToolResult,
   runAlmanacTool,
 } from '../src/utils/almanacTools';
-import { getLocalDateRangeUtc, getQuartersInRange } from '../src/utils/astronomy';
+import { getLocalDateRangeUtc, getQuartersInRange, MOON_PHASE_MEANINGS } from '../src/utils/astronomy';
+import { ZODIAC_SIGNS } from '../src/utils/zodiac';
 import { AstroRecord } from '../src/types';
 
 // 2026-10-27 11:00 Edmonton; already 2026-10-28 in Auckland.
@@ -134,6 +135,8 @@ test('invalid arguments are rejected with actionable messages', () => {
     ['find_sign_ingresses', { year: 2027 }, /Unknown argument\(s\): year/],
     ['get_moon_on_date', { date: 20261124 }, /date must be a string/],
     ['get_moon_on_date', 'tomorrow', /JSON object/],
+    ['get_traditional_meaning', {}, /sign, a phase, or both/],
+    ['get_traditional_meaning', { phase: 'Blue Moon' }, /phase must be one of/],
     ['find_planets', {}, /Unknown tool/],
   ];
   for (const [tool, args, pattern] of cases) {
@@ -143,7 +146,7 @@ test('invalid arguments are rejected with actionable messages', () => {
 
 test('model results are compact and omit emoji', () => {
   const result = toModelResult(runAlmanacTool('get_moon_on_date', { date: '2026-11-24' }, utc));
-  assert.ok(result.ok);
+  assert.ok('events' in result);
   const [daily, ingress, fullMoon] = result.events;
   assert.deepEqual(daily, {
     id: 'daily-2026-11-24-UTC',
@@ -182,4 +185,14 @@ test('event views carry ISO instants and hemisphere-aware quarter emoji', () => 
   assert.equal(dailyView.utcTime, undefined);
   assert.equal(dailyView.formattedLocalTime, undefined);
   assert.equal(dailyView.isAllDay, true);
+});
+
+test('traditional meanings come from the app copy', () => {
+  const result = runAlmanacTool('get_traditional_meaning', { sign: 'gemini', phase: 'full moon' }, edmonton);
+  assert.ok('interpretations' in result);
+  const [sign, phase] = result.interpretations;
+  assert.equal(sign.kind, 'sign');
+  assert.equal(sign.kind === 'sign' && sign.theme, ZODIAC_SIGNS[2].theme);
+  assert.deepEqual(phase, { kind: 'phase', name: 'Full Moon', meaning: MOON_PHASE_MEANINGS['Full Moon'] });
+  assert.deepEqual(toModelResult(result), { ok: true, interpretations: result.interpretations });
 });

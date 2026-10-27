@@ -8,7 +8,7 @@
  */
 
 import { AstroEventType, AstroRecord, Hemisphere } from '../types';
-import { AlmanacToolResult } from './almanacTools';
+import { AlmanacToolResult, Interpretation } from './almanacTools';
 
 export interface ModelRecord {
   id: string;
@@ -35,6 +35,7 @@ export type ModelToolResult =
       truncated: boolean;
       events: ModelRecord[];
     }
+  | { ok: true; interpretations: Interpretation[] }
   | { ok: false; error: string };
 
 export interface EventView {
@@ -83,6 +84,7 @@ export function toModelRecord(record: AstroRecord): ModelRecord {
 
 export function toModelResult(result: AlmanacToolResult): ModelToolResult {
   if ('error' in result) return { ok: false, error: result.error };
+  if ('interpretations' in result) return { ok: true, interpretations: result.interpretations };
   return {
     ok: true,
     timezone: result.timezone,
