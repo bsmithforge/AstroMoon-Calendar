@@ -13,6 +13,11 @@ import { AstroRecord } from '../src/types';
 // 2026-10-27 11:00 Edmonton; already 2026-10-28 in Auckland.
 const now = new Date('2026-10-27T17:00:00Z');
 const edmonton: AlmanacContext = { timezone: 'America/Edmonton', hemisphere: 'northern', now };
+// Exact local times are asserted in zones whose rules are settled. Wall-clock
+// times come from the runtime's tz database, which changes: tzdata 2026c keeps
+// Alberta on UTC-6 from 2026-11-01, so Edmonton times after that date differ
+// between Node releases. Edmonton is used here only for dates.
+const utc: AlmanacContext = { ...edmonton, timezone: 'UTC' };
 
 function records(result: AlmanacToolResult): AstroRecord[] {
   assert.ok('records' in result, `expected success, got: ${'error' in result ? result.error : ''}`);
@@ -28,7 +33,7 @@ function error(result: AlmanacToolResult): string {
 const NOV_2026_FULL_MOON = 'quarter-2026-11-24T14-54-04-191Z-2';
 
 test('phase search matches the existing quarter helper for the same window', () => {
-  const result = runAlmanacTool('find_moon_phases', { start_date: '2026-01-01', end_date: '2026-12-31', limit: ALMANAC_MAX_LIMIT }, { ...edmonton, timezone: 'UTC' });
+  const result = runAlmanacTool('find_moon_phases', { start_date: '2026-01-01', end_date: '2026-12-31', limit: ALMANAC_MAX_LIMIT }, utc);
   const { startUtc, endUtc } = getLocalDateRangeUtc('2026-01-01', '2026-12-31', 'UTC');
   const expected = getQuartersInRange(startUtc, endUtc, 'UTC').filter((rec) => rec.localDateString <= '2026-12-31');
   assert.deepEqual(records(result).map((rec) => rec.id), expected.slice(0, ALMANAC_MAX_LIMIT).map((rec) => rec.id));
@@ -36,11 +41,11 @@ test('phase search matches the existing quarter helper for the same window', () 
 });
 
 test('phase and sign filters narrow the search', () => {
-  const result = runAlmanacTool('find_moon_phases', { phases: ['full moon'], sign: 'gemini', limit: 1 }, edmonton);
+  const result = runAlmanacTool('find_moon_phases', { phases: ['full moon'], sign: 'gemini', limit: 1 }, utc);
   const [first] = records(result);
   assert.equal(first.id, NOV_2026_FULL_MOON);
   assert.equal(first.localDateString, '2026-11-24');
-  assert.equal(first.formattedLocalTime, '07:54');
+  assert.equal(first.formattedLocalTime, '14:54');
 });
 
 test('omitted dates default to one year from today in the selected timezone', () => {
@@ -137,14 +142,14 @@ test('invalid arguments are rejected with actionable messages', () => {
 });
 
 test('model results are compact and omit emoji', () => {
-  const result = toModelResult(runAlmanacTool('get_moon_on_date', { date: '2026-11-24' }, edmonton));
+  const result = toModelResult(runAlmanacTool('get_moon_on_date', { date: '2026-11-24' }, utc));
   assert.ok(result.ok);
   const [daily, ingress, fullMoon] = result.events;
   assert.deepEqual(daily, {
-    id: 'daily-2026-11-24-America-Edmonton',
+    id: 'daily-2026-11-24-UTC',
     type: 'daily_summary',
     date: '2026-11-24',
-    title: "Moon in Gemini (4°54')",
+    title: "Moon in Gemini (0°31')",
     sign: 'Gemini',
     phase: 'Full Moon',
     illumination_pct: 100,
@@ -156,7 +161,7 @@ test('model results are compact and omit emoji', () => {
     date: '2026-11-24',
     title: 'Full Moon in Gemini',
     sign: 'Gemini',
-    time: '07:54',
+    time: '14:54',
   });
 
   assert.deepEqual(toModelResult(runAlmanacTool('find_planets', {}, edmonton)), { ok: false, error: 'Unknown tool: find_planets.' });
