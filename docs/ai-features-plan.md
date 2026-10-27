@@ -84,7 +84,7 @@ flowchart LR
 - **Sync `dev`:** fast-forward `dev` to `main` before the first phase merges. It is currently two commits behind, with no commits of its own.
 - **Branch protection:** protect `main` and `dev` on GitHub so changes arrive only through PRs with passing CI.
 - **Preview key:** in Vercel, scope the AI provider variables to the Preview environment for the `dev` branch only. Where the provider allows it, use a separate key or project from production, so testing doesn't use up production quota. Phase-branch previews then run without a key, which tests the "unavailable" state.
-- **Deployment Protection:** if Vercel's Deployment Protection is on for previews, sign in to Vercel on the test phones. Calendar apps can't fetch a protected feed URL, so test webcal subscriptions on production.
+- **Deployment Protection:** Vercel Authentication protects this project's previews, so sign in to Vercel in the browser on each test device. Previews are not public, which also keeps the `dev` key out of reach. Calendar apps can't fetch a protected feed URL, so test webcal subscriptions on production.
 
 ### Phase branches
 
@@ -139,19 +139,20 @@ These are refactors that later phases depend on. They land separately so the rev
 
 This builds and tests the tools the model will call before any model is involved.
 
-1. `Add almanac tool definitions`. Add `src/utils/almanacTools.ts` with a JSON schema and an implementation for each tool:
-   - `find_moon_phases({ start, end, phases?, sign? })`, which uses `getQuartersInRange()`
-   - `find_sign_ingresses({ start, end, sign? })`, which uses `findIngressesInRange()`
-   - `find_eclipses({ start, end, type?, kind? })`, which uses `getEclipsesInRange()`
-   - `get_moon_on_date({ date })`, which takes the noon snapshot from `generateRangeDataset(date, date, …)`
+1. `Share the local date range to UTC window conversion` (added during the phase). Extract `getLocalDateRangeUtc()` from `generateRangeDataset()`, so the tools search exactly the same window without copying timezone logic. Output was verified identical before and after.
+2. `Add almanac tool definitions`. Add `src/utils/almanacTools.ts` with a JSON schema and an implementation for each tool. Each range tool also takes optional `timezone`, `limit` and `order` (`earliest` or `latest`) arguments.
+   - `find_moon_phases({ start_date?, end_date?, phases?, sign? })`, which uses `getQuartersInRange()`
+   - `find_sign_ingresses({ start_date?, end_date?, sign? })`, which uses `findIngressesInRange()`
+   - `find_eclipses({ start_date?, end_date?, type?, kind? })`, which uses `getEclipsesInRange()`
+   - `get_moon_on_date({ date? })`, which takes the noon snapshot from `generateRangeDataset(date, date, …)`
 
-   **Validation:** every argument is checked before any search runs. Dates go through `dateRange.ts`, signs are matched against `ZODIAC_SIGNS`, and timezones are checked with `isValidTimeZone()`.
+   **Validation:** every argument is checked before any search runs. Dates go through `dateRange.ts`, signs are matched against `ZODIAC_SIGNS`, timezones are checked with `isValidTimeZone()`, and unknown arguments are rejected.
 
-   **Defaults:** timezone and hemisphere default to the user's settings. "Today" is computed in the selected timezone with `getLocalDateComponents()`. The current time (`now`) can be injected for tests and evals.
+   **Defaults:** timezone and hemisphere default to the user's settings. "Today" is computed in the selected timezone with `getLocalDateComponents()`, and a search with no end date covers one year. The current time (`now`) can be injected for tests and evals.
 
-   **Results:** sorted chronologically and capped.
-2. `Add compact tool result formats`. Add a lean format for the model (ID, type, local date and time, sign, kind) and a fuller one for the UI, with ISO strings in place of `Date` objects.
-3. `Test almanac tools`. Add `tests/almanacTools.test.ts` covering:
+   **Results:** limited to the requested local dates, sorted chronologically, and capped (10 by default, 40 at most).
+3. `Add compact tool result formats`. Add `src/utils/almanacResults.ts`, with a lean format for the model (ID, type, local date and time, plain title, sign, and noon phase for daily records) and a JSON-safe event view for the UI (ISO instants, timezone label, hemisphere-aware quarter emoji).
+4. `Test almanac tools`. Add `tests/almanacTools.test.ts` covering:
    - fixed-date queries checked against the existing helpers' output
    - the Pisces-to-Aries ingress wraparound
    - Auckland date rollover and Kolkata's half-hour offset
