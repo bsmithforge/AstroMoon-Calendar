@@ -62,6 +62,7 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 | `server/ai/provider.ts`, `server/ai/prompt.ts` | OpenAI-compatible Chat Completions client with fallback; committed system prompt |
 | `src/utils/almanacTools.ts`, `src/utils/almanacResults.ts` | Deterministic, validated tools the model calls (phases, ingresses, eclipses, a date's snapshot, traditional meanings) and their model/UI output formats |
 | `src/utils/dateRange.ts` | Shared YYYY-MM-DD validation and the 24-month / 3,660-day export limits |
+| `src/utils/exportDraft.ts` | `ExportDraft`/`ExportSettings` shared by `ExportModal` and Ask's `prepare_export`, per-format draft checks, `getExportRecords()` for ICS/table records |
 | `evals/ask-questions.json`, `scripts/eval-ask.ts` | Live Ask eval set and runner (expected events computed by the tools at eval time) |
 | `scripts/build-api.mjs` | esbuild step (part of `npm run build`) bundling each `server/<name>.ts` + astronomy-engine into `server/dist/<name>.js` (gitignored) |
 | `api/calendar.js`, `api/ask.js` | Committed Vercel function entries; only re-export the bundles |
@@ -97,7 +98,7 @@ Treat the exported files as user-facing deliverables. Changes to dates, filters,
 | Data-table PDF | The same filtered range records as range ICS → dynamically imported `generatePdfDocument()` → jsPDF `save()` |
 | Calendar PDF (default PDF mode) | Months spanned by export dates → `generateMonthData()` → off-screen `CalendarGrid` with export toggles → PNG captures → `generateCalendarPdf()` → jsPDF `save()` |
 
-The export and subscription dialogs initialize their own toggles from app state; modal edits do not update the main calendar filters. The export dialog also initializes its dates from app state. Check initialization, reopening, and preset changes when modifying these workflows. ICS files are static, one-time imports, not subscriptions or a live calendar sync.
+The export and subscription dialogs initialize their own toggles from app state; modal edits do not update the main calendar filters. The export dialog also initializes its dates from app state, unless Ask's "Review export" passes a `draft`: then dates, toggles, PDF layout, timezone, and hemisphere come from the draft (shown in a banner), App clears the draft on close, and the user still taps to download. Range ICS and table PDF records come from `getExportRecords()` either way. Check initialization, reopening, and preset changes when modifying these workflows. ICS files are static, one-time imports, not subscriptions or a live calendar sync.
 
 - ICS serializers accept already-selected records. Preserve CRLF endings, escaped text, UTF-8-safe folding at 75 bytes including continuation whitespace, UTC `Z` timestamps for timed events, and exclusive next-day `DTEND` for all-day events.
 - Current ICS UIDs are `${rec.id}@astromooncal.app`. Preserve event identity when changing generation/serialization so repeated imports do not unexpectedly duplicate events. Timed events currently have a one-hour export duration.

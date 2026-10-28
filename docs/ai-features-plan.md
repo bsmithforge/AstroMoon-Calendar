@@ -229,17 +229,27 @@ As built:
 
 ### Phase 5: Describe your export (`ai/05-export-builder`)
 
+As built:
+
 1. `Add prepare_export tool`. This tool:
+   - takes the range as `start_date` and `end_date`, a `year`, or a `month` with optional `months`, so the model needn't work out month lengths
    - validates through `dateRange.ts`, applying the limit for the chosen format: 24 whole months for calendar PDF, 3,660 days for ICS or table PDF
    - requires at least one event type for ICS and table output
    - returns an `ExportDraft` with dates, timezone, hemisphere, toggles and format, and never a file
+
+   `src/utils/exportDraft.ts` holds the draft type, the per-format checks and `getExportRecords()`, which the dialog also uses.
 2. `Prefill the export dialog from a draft`. Add an optional `draft` prop on `ExportModal`:
    - the dialog's initial state comes from the draft, under a banner reading "Prefilled from your request. Review before downloading."
-   - the recommended download button is emphasized but still needs a tap, which also keeps iOS's requirement that a download start from a user gesture
+   - the draft's timezone and hemisphere apply to every output, including the capture grids. The banner names them when they differ from the calendar's.
+   - the suggested download button is ringed and labeled but still needs a tap, which also keeps iOS's requirement that a download start from a user gesture
    - closing the dialog clears the draft, so reopening it from the header starts from app state as it does now
    - the main calendar's filters don't change
-3. `Offer "Review export" in Ask answers`.
-4. `Test export drafts`. Cover draft validation and the mapping from draft to dialog settings. A draft must produce the same records as the same settings entered by hand.
+3. `Offer "Review export" in Ask answers`. The answer shows an "Export ready to review" card built from the draft itself (format, dates, events, timezone, hemisphere), not from the model's wording. The prompt asks the model not to restate the dates.
+4. `Test export drafts`:
+   - every range form and rejection, with each format's limit tested at its boundary
+   - a draft and the same settings entered by hand produce identical records and ICS bytes
+   - the ask loop keeps the latest valid draft, including when the answer falls back
+   - two export questions join the live eval set
 
 **Verify:** follow the export checklist in `AGENTS.md`:
 - produce ICS and both PDF modes from a draft and by hand, on desktop and phones, and open the files
