@@ -278,6 +278,22 @@ test('provider failures map to typed errors', async () => {
   }
 });
 
+test('provider error messages keep the error code but not the failed generation', async () => {
+  const groq = new Response(JSON.stringify({
+    error: { message: 'Failed to call a function.', code: 'tool_use_failed', failed_generation: 'secret-ish model output' },
+  }), { status: 400 });
+  const gemini = new Response(JSON.stringify([{ error: { code: 503, message: 'High demand.', status: 'UNAVAILABLE' } }]), { status: 503 });
+  for (const [response, expected] of [[groq, '(HTTP 400, tool_use_failed)'], [gemini, '(HTTP 503, UNAVAILABLE)']] as const) {
+    const { impl } = fakeFetch([response]);
+    await assert.rejects(createProviderModel(config, impl)(request), (err) => {
+      assert.ok(err instanceof ProviderError);
+      assert.ok(err.message.includes(expected), err.message);
+      assert.ok(!err.message.includes('secret-ish'));
+      return true;
+    });
+  }
+});
+
 test('the fallback provider answers when the primary fails', async () => {
   const fallback = { baseUrl: 'https://fallback.example/v1', model: 'fallback-model', apiKey: 'key-2' };
   const { impl, calls } = fakeFetch([new Response('{}', { status: 429 }), okBody({ content: 'hello' })]);

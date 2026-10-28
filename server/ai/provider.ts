@@ -77,13 +77,30 @@ function parseRetryAfter(value: string | null): number | undefined {
   return Number.isFinite(date) ? Math.max(0, Math.ceil((date - Date.now()) / 1000)) : undefined;
 }
 
-function errorForStatus(status: number, retryAfter: string | null): ProviderError {
+/**
+ * The provider's short error code (Groq: "tool_use_failed"; Gemini wraps its
+ * error in an array and uses "status"), for server logs and evals. Only the
+ * code is kept: error bodies can echo the model's failed generation.
+ */
+async function readErrorCode(response: Response): Promise<string | undefined> {
+  try {
+    const body = await response.json();
+    const error = (Array.isArray(body) ? body[0] : body)?.error;
+    const code = error?.status ?? error?.code ?? error?.type;
+    return typeof code === 'string' || typeof code === 'number' ? String(code).slice(0, 60) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function errorForStatus(status: number, retryAfter: string | null, code?: string): ProviderError {
+  const http = code ? `HTTP ${status}, ${code}` : `HTTP ${status}`;
   if (status === 429) return new ProviderError('quota', 'Provider rate limit or quota reached.', parseRetryAfter(retryAfter));
   if (status === 401 || status === 403 || status === 404) {
-    return new ProviderError('misconfigured', `Provider rejected the request (HTTP ${status}). Check the key, base URL, and model.`);
+    return new ProviderError('misconfigured', `Provider rejected the request (${http}). Check the key, base URL, and model.`);
   }
-  if (status >= 500) return new ProviderError('unavailable', `Provider error (HTTP ${status}).`);
-  return new ProviderError('bad_response', `Provider rejected the request (HTTP ${status}).`);
+  if (status >= 500) return new ProviderError('unavailable', `Provider error (${http}).`);
+  return new ProviderError('bad_response', `Provider rejected the request (${http}).`);
 }
 
 export function createProviderModel(config: ProviderConfig, fetchImpl: typeof fetch = fetch): ChatModel {
@@ -111,7 +128,9 @@ export function createProviderModel(config: ProviderConfig, fetchImpl: typeof fe
       throw new ProviderError('unavailable', 'Could not reach the provider.');
     }
 
-    if (!response.ok) throw errorForStatus(response.status, response.headers.get('retry-after'));
+    if (!response.ok) {
+      throw errorForStatus(response.status, response.headers.get('retry-after'), await readErrorCode(response));
+    }
 
     let body: {
       model?: string;
