@@ -109,7 +109,7 @@ After a phase merges, repeat its **Verify** checklist on the `dev` preview. Ther
 | 1 | 0–3 | Plan, groundwork, tools and endpoint. Nothing user-visible ships. With no production key, `/api/ask` returns 503 and nothing links to it. |
 | 2 | 4 | Ask UI. Set the production key and the WAF rule before merging. |
 | 3 | 5 | Export builder. Run the full export checklist on real devices against `dev` first. |
-| 4 | 6 | Theme search. |
+| 4 | 6, 6.5 | Theme search and the almanac scroll. |
 | 5 | 7 | Docs and the final production pass. |
 
 ### Secrets
@@ -278,6 +278,25 @@ As built:
 - first-load time and memory on a mid-range phone
 - works offline after the first load
 - the WASM backend runs on iOS Safari
+
+### Phase 6.5: Almanac scroll (`ai/06.5-almanac-scroll`)
+
+Added after Phase 6. The Ask dialog had become mostly chrome: a masthead, a tab bar, bordered example buttons, an input footer and a download panel. Only a small part of the screen showed the answer. As built:
+
+1. `Add almanac scroll pieces`. `AlmanacScroll.tsx` has:
+   - brass rods and a single written prompt line with a quill
+   - suggestions as a quiet list of italic phrases
+   - a Moon that cycles its phases while the almanac works
+   - `useUnroll()`, which measures the paper before the first paint and animates its height, so the bottom rod travels with the paper's edge
+   - nothing animates under reduced motion
+2. `Turn the Ask dialog into an unrolling scroll`:
+   - a quiet "Ask · Seek a theme" switch and one serif prompt
+   - answers inked onto the page with a drop capital, and brass-underlined events
+   - the export draft as a sealed note
+   - footnotes for "How this was answered", privacy and the timezone
+3. `Restyle theme search; download the model on first search`. The explicit download block is gone. The caption says the first search downloads ≈29 MB once, and that search is the go-ahead.
+
+**Verify:** unroll frames and every state at 390 px and on desktop; keyboard use; reduced motion; the live Ask flow in WebKit; Review export through to a downloaded PDF.
 
 ### Phase 7: Docs and launch (`ai/07-launch`)
 
