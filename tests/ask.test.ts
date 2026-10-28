@@ -9,6 +9,7 @@ import {
   createChatModel,
   createProviderModel,
   ProviderError,
+  providersForCountry,
   readProviderConfigs,
   ToolCall,
 } from '../server/ai/provider';
@@ -317,6 +318,20 @@ test('provider settings need a base URL, model, and key', () => {
   );
 });
 
+test('a provider with excluded countries is skipped there, and when the country is unknown', () => {
+  const configs = readProviderConfigs({
+    AI_BASE_URL: 'https://a/v1', AI_MODEL: 'm', AI_API_KEY: 'k',
+    AI_FALLBACK_BASE_URL: 'https://b/v1', AI_FALLBACK_MODEL: 'n', AI_FALLBACK_API_KEY: 'j',
+    AI_FALLBACK_EXCLUDED_COUNTRIES: ' de, gb ,CH,',
+  });
+  assert.deepEqual(configs[1].excludedCountries, ['DE', 'GB', 'CH']);
+  const models = (country: string | null) => providersForCountry(configs, country).map((c) => c.model);
+  assert.deepEqual(models('CA'), ['m', 'n']);
+  assert.deepEqual(models('gb'), ['m']);
+  assert.deepEqual(models(null), ['m']);
+  assert.deepEqual(models(''), ['m']);
+});
+
 // HTTP handler.
 
 function post(body: unknown, headers: Record<string, string> = { 'content-type': 'application/json' }): Request {
@@ -352,6 +367,12 @@ test('the handler answers, or explains why it cannot', async () => {
   assert.equal(ok.status, 200);
   assert.equal(ok.headers.get('cache-control'), 'no-store');
   assert.equal((await ok.json()).source, 'model');
+
+  const countries: (string | null)[] = [];
+  const located = createAskHandler({ getModel: (country) => { countries.push(country); return answering; }, now: () => now });
+  await located(post({ question: 'hi' }, { 'content-type': 'application/json', 'x-vercel-ip-country': 'FR' }));
+  await located(post({ question: 'hi' }));
+  assert.deepEqual(countries, ['FR', null]);
 
   const unconfigured = await createAskHandler({ getModel: () => null })(post({ question: 'hi' }));
   assert.equal(unconfigured.status, 503);

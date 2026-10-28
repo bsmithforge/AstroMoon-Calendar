@@ -56,6 +56,12 @@ export interface ProviderConfig {
   baseUrl: string;
   model: string;
   apiKey: string;
+  /**
+   * ISO 3166 country codes this provider must not serve (from
+   * <prefix>EXCLUDED_COUNTRIES). Gemini's free tier, for one, may not be
+   * offered to users in the EEA, UK, or Switzerland.
+   */
+  excludedCountries?: string[];
 }
 
 /** Primary provider first, then the optional fallback. Empty when Ask is not configured. */
@@ -64,9 +70,26 @@ export function readProviderConfigs(env: Record<string, string | undefined>): Pr
     const baseUrl = env[`${prefix}BASE_URL`]?.trim();
     const model = env[`${prefix}MODEL`]?.trim();
     const apiKey = env[`${prefix}API_KEY`]?.trim();
-    return baseUrl && model && apiKey ? { baseUrl: baseUrl.replace(/\/+$/, ''), model, apiKey } : null;
+    if (!baseUrl || !model || !apiKey) return null;
+    const config: ProviderConfig = { baseUrl: baseUrl.replace(/\/+$/, ''), model, apiKey };
+    const excluded = (env[`${prefix}EXCLUDED_COUNTRIES`] ?? '')
+      .split(',')
+      .map((code) => code.trim().toUpperCase())
+      .filter(Boolean);
+    if (excluded.length > 0) config.excludedCountries = excluded;
+    return config;
   };
   return [read('AI_'), read('AI_FALLBACK_')].filter((config): config is ProviderConfig => config !== null);
+}
+
+/**
+ * Providers allowed to answer a request from `country` (Vercel's
+ * x-vercel-ip-country header). Fails closed: a provider with exclusions is
+ * skipped when the country is unknown, as it is under `npm run dev`.
+ */
+export function providersForCountry(configs: ProviderConfig[], country: string | null): ProviderConfig[] {
+  const code = country?.trim().toUpperCase() || null;
+  return configs.filter((config) => !config.excludedCountries || (code !== null && !config.excludedCountries.includes(code)));
 }
 
 function parseRetryAfter(value: string | null): number | undefined {

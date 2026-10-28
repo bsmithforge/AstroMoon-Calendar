@@ -15,7 +15,7 @@
 import { Hemisphere } from '../src/types';
 import { isValidTimeZone } from '../src/utils/subscription';
 import { askAlmanac } from './ai/ask';
-import { ChatModel, createChatModel, ProviderError, readProviderConfigs } from './ai/provider';
+import { ChatModel, createChatModel, ProviderError, providersForCountry, readProviderConfigs } from './ai/provider';
 
 export const ASK_MAX_QUESTION_LENGTH = 400;
 const MAX_BODY_BYTES = 4096;
@@ -32,8 +32,11 @@ function invalid(message: string): Response {
 }
 
 export interface AskHandlerDeps {
-  /** Returns null when no provider is configured. */
-  getModel: () => ChatModel | null;
+  /**
+   * Returns null when no provider is configured for this request. `country`
+   * is Vercel's x-vercel-ip-country header, or null outside Vercel.
+   */
+  getModel: (country: string | null) => ChatModel | null;
   now?: () => Date;
 }
 
@@ -71,7 +74,7 @@ export function createAskHandler({ getModel, now }: AskHandlerDeps) {
       return invalid('hemisphere must be "northern" or "southern".');
     }
 
-    const model = getModel();
+    const model = getModel(request.headers.get('x-vercel-ip-country'));
     if (!model) {
       return json(503, { error: 'not_configured', message: 'Ask the Almanac is not configured on this deployment.' });
     }
@@ -103,8 +106,8 @@ export function createAskHandler({ getModel, now }: AskHandlerDeps) {
   };
 }
 
-function modelFromEnv(): ChatModel | null {
-  const configs = readProviderConfigs(process.env);
+function modelFromEnv(country: string | null): ChatModel | null {
+  const configs = providersForCountry(readProviderConfigs(process.env), country);
   return configs.length > 0 ? createChatModel(configs) : null;
 }
 
