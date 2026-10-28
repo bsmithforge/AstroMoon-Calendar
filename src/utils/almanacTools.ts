@@ -242,7 +242,7 @@ export const ALMANAC_TOOL_SCHEMAS: AlmanacToolSchema[] = [
         include: {
           type: 'array',
           items: { type: 'string', enum: EXPORT_EVENTS },
-          description: "Event types to include: 'moon_phases' (New, First Quarter, Full, Third Quarter), 'sign_changes' (Moon entering a sign), 'noon_signs' (daily sign and phase at noon), 'eclipses'. Defaults to all four.",
+          description: "Event types to include: 'moon_phases' (always all four: New, First Quarter, Full, Third Quarter; exports can't include only some of them, so say so if the user asked for fewer), 'sign_changes' (Moon entering a sign), 'noon_signs' (daily sign and phase at noon), 'eclipses'. Defaults to all four types.",
         },
         timezone: rangeParameters.timezone,
         hemisphere: {

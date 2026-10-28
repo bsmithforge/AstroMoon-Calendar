@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowUp, ChevronDown, Feather, LoaderCircle, ShieldCheck, X } from 'lucide-react';
+import { AlertCircle, ArrowUp, ChevronDown, Download, Feather, LoaderCircle, ShieldCheck, X } from 'lucide-react';
 import { Hemisphere } from '../types';
 import { EventView } from '../utils/almanacResults';
+import { countMonthsSpanned } from '../utils/dateRange';
+import { describeExportEvents, describeExportRange, EXPORT_FORMAT_LABELS, ExportDraft } from '../utils/exportDraft';
 import {
   ASK_QUESTION_MAX_LENGTH,
   AskOutcome,
@@ -25,6 +27,7 @@ interface AskModalProps {
   lastExchange: AskExchange | null;
   onExchange: (exchange: AskExchange) => void;
   onOpenEvent: (event: EventView) => void;
+  onReviewExport: (draft: ExportDraft) => void;
   onClose: () => void;
 }
 
@@ -34,6 +37,7 @@ const EXAMPLE_QUESTIONS = [
   'What eclipses happen next year?',
   'Which full moons next year are in fire signs?',
   'What does a New Moon in Scorpio mean?',
+  'Make me a printable calendar of next year’s full and new moons',
 ];
 
 const TOOL_LABELS: Record<string, string> = {
@@ -42,6 +46,7 @@ const TOOL_LABELS: Record<string, string> = {
   find_eclipses: 'Searched eclipses',
   get_moon_on_date: 'Looked up the Moon on a date',
   get_traditional_meaning: 'Looked up traditional meanings',
+  prepare_export: 'Prepared export settings',
 };
 
 export const AskModal: React.FC<AskModalProps> = (props) =>
@@ -54,6 +59,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
   lastExchange,
   onExchange,
   onOpenEvent,
+  onReviewExport,
   onClose,
 }) => {
   const [question, setQuestion] = useState('');
@@ -204,7 +210,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
                 <div className="space-y-3">
                   <QuestionHeading question={exchange.question} />
                   {'result' in exchange.outcome ? (
-                    <Answer result={exchange.outcome.result} onOpenEvent={onOpenEvent} />
+                    <Answer result={exchange.outcome.result} onOpenEvent={onOpenEvent} onReviewExport={onReviewExport} />
                   ) : (
                     <AskError outcome={exchange.outcome} />
                   )}
@@ -312,7 +318,11 @@ const QuestionHeading: React.FC<{ question: string }> = ({ question }) => (
   </p>
 );
 
-const Answer: React.FC<{ result: AskResult; onOpenEvent: (event: EventView) => void }> = ({ result, onOpenEvent }) => {
+const Answer: React.FC<{
+  result: AskResult;
+  onOpenEvent: (event: EventView) => void;
+  onReviewExport: (draft: ExportDraft) => void;
+}> = ({ result, onOpenEvent, onReviewExport }) => {
   const events = new Map(result.events.map((event) => [event.id, event]));
   return (
     <div className="space-y-3">
@@ -323,6 +333,7 @@ const Answer: React.FC<{ result: AskResult; onOpenEvent: (event: EventView) => v
           return event ? <EventChip key={index} event={event} onOpen={onOpenEvent} /> : null;
         })}
       </p>
+      {result.exportDraft && <ExportDraftCard draft={result.exportDraft} onReview={onReviewExport} />}
       {result.events.length > 0 && (
         <p className="text-[11px] text-[#5F6D61]">Tap an event to open that day in the calendar.</p>
       )}
@@ -355,13 +366,53 @@ const EventChip: React.FC<{ event: EventView; onOpen: (event: EventView) => void
   );
 };
 
+/** What prepare_export set up, shown from the draft itself rather than the model's wording. */
+const ExportDraftCard: React.FC<{ draft: ExportDraft; onReview: (draft: ExportDraft) => void }> = ({ draft, onReview }) => {
+  const months = countMonthsSpanned(draft.startDate, draft.endDate);
+  const rows: [string, string][] = [
+    ['Format', draft.format === 'calendar_pdf'
+      ? `${EXPORT_FORMAT_LABELS[draft.format]}, ${months} whole month${months === 1 ? '' : 's'}`
+      : EXPORT_FORMAT_LABELS[draft.format]],
+    ['Dates', describeExportRange(draft)],
+    ['Events', describeExportEvents(draft) ?? 'None (month grids only)'],
+    ['Timezone', draft.timezone],
+    ['Moon', `${draft.hemisphere} hemisphere`],
+  ];
+  return (
+    <div className="rounded-md border border-[#B89A62] bg-[#F6EFE0] p-3 sm:p-4">
+      <p className="font-serif-almanac text-xs font-semibold uppercase tracking-wider text-[#182421]">Export ready to review</p>
+      <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+        {rows.map(([label, value]) => (
+          <React.Fragment key={label}>
+            <dt className="text-[#5F6D61]">{label}</dt>
+            <dd className="min-w-0 break-words text-[#182421]">{value}</dd>
+          </React.Fragment>
+        ))}
+      </dl>
+      <button
+        type="button"
+        onClick={() => onReview(draft)}
+        className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md bg-[#B44732] px-4 text-sm font-semibold text-white shadow-xs transition hover:bg-[#9E3D2A] min-[430px]:w-auto"
+      >
+        <Download size={16} />
+        Review export
+      </button>
+    </div>
+  );
+};
+
 const HowAnswered: React.FC<{ result: AskResult }> = ({ result }) => {
   const check =
     result.source === 'fallback'
       ? 'The AI’s wording didn’t pass the server’s checks, so this lists what the almanac found instead.'
       : result.corrections > 0
         ? 'The first draft wrote a date itself, so it was sent back once; the final answer cites only events the almanac returned.'
-        : 'Every event above was checked against what the almanac returned, and its date and time are shown from AstroMoon’s calculations.';
+        : result.events.length > 0
+          ? 'Every event above was checked against what the almanac returned, and its date and time are shown from AstroMoon’s calculations.'
+          : 'The answer cites no dated events, and was checked for dates the AI wrote itself.';
+  const exportNote = result.exportDraft
+    ? 'The export card shows the settings exactly as the tool validated them; nothing downloads until you choose in the export dialog.'
+    : null;
   return (
     <details className="group rounded-md border border-[#D8D0BF] bg-[#FAF6EE] text-xs text-[#5F6D61]">
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 font-medium text-[#182421] [&::-webkit-details-marker]:hidden">
@@ -388,6 +439,7 @@ const HowAnswered: React.FC<{ result: AskResult }> = ({ result }) => {
           <p>The AI answered without looking anything up.</p>
         )}
         <p>{check}</p>
+        {exportNote && <p>{exportNote}</p>}
         {result.model && <p>Model: <span className="font-mono text-[11px]">{result.model}</span></p>}
       </div>
     </details>

@@ -62,6 +62,22 @@ export function getExportDraftError(draft: ExportDraft): string | null {
   return hasIncludedEvents(draft) ? null : 'Include at least one event type in an .ics or data-table export.';
 }
 
+/** "Jan 1 – Dec 31, 2027", from the inclusive local dates. */
+export function describeExportRange(settings: ExportSettings): string {
+  const toDate = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day, 12));
+  };
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+    .formatRange(toDate(settings.startDate), toDate(settings.endDate));
+}
+
+/** "Moon phases, Eclipses", or null when no event type is included. */
+export function describeExportEvents(settings: ExportSettings): string | null {
+  const names = EXPORT_EVENT_LABELS.filter(([key]) => settings[key]).map(([, label]) => label);
+  return names.length > 0 ? names.join(', ') : null;
+}
+
 export function toExportFilters(settings: ExportSettings): FilterSettings {
   return {
     startDate: settings.startDate,

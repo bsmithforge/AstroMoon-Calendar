@@ -8,6 +8,7 @@
 
 import { Hemisphere } from '../types';
 import { EventView } from './almanacResults';
+import { ExportDraft } from './exportDraft';
 
 export type AnswerSegment = { type: 'text'; text: string } | { type: 'event'; id: string };
 
@@ -29,6 +30,8 @@ export interface AskResult {
   source: 'model' | 'fallback';
   /** How many times the model's answer was sent back for correction (0 or 1). */
   corrections: number;
+  /** Export settings from prepare_export, for the user to review in the export dialog. */
+  exportDraft: ExportDraft | null;
 }
 
 /** Error codes from server/ask.ts, plus 'network' when the request never got an answer. */
@@ -98,7 +101,7 @@ export async function askTheAlmanac(
     // A static host without the function, or an HTML error page.
   }
 
-  if (response.ok && isAskResult(body)) return { ok: true, result: body };
+  if (response.ok && isAskResult(body)) return { ok: true, result: { ...body, exportDraft: body.exportDraft ?? null } };
 
   const payload = (body ?? {}) as { error?: string; message?: string; retryAfter?: number | null };
   const error: AskErrorCode =

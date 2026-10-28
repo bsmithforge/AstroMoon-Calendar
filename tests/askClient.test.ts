@@ -11,7 +11,7 @@ import {
 } from '../src/utils/askClient';
 
 const request = { question: 'When is the next full moon?', timezone: 'UTC', hemisphere: 'northern' as const };
-const result: AskResult = { segments: [{ type: 'text', text: 'Hi.' }], events: [], trace: [], model: 'm', source: 'model', corrections: 0 };
+const result: AskResult = { segments: [{ type: 'text', text: 'Hi.' }], events: [], trace: [], model: 'm', source: 'model', corrections: 0, exportDraft: null };
 
 function respond(response: Response | Error) {
   const calls: { url: string; init?: RequestInit }[] = [];
