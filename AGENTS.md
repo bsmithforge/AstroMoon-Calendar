@@ -7,7 +7,7 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 **Product priorities:** Exports are the main feature. Reliable, accurate, usable downloaded calendars and PDFs take priority when evaluating changes. The entire app must be fully mobile compatible, including export configuration and file delivery. Existing mobile issues are cleanup work to address in a dedicated task, not evidence that mobile support is optional or already complete.
 
 - Stack: React 19, TypeScript, Vite 6, Tailwind CSS 4 via `@tailwindcss/vite`, Lucide icons, and `astronomy-engine` pinned to **2.1.19**. PDF exports use jsPDF and, for calendar images, `html-to-image`.
-- There is no database, authentication, or third-party API integration. The only server code is the stateless subscription feed in `api/`; everything else runs in the browser. `@vercel/analytics` (mounted in `src/main.tsx`) is the sole telemetry; it is a no-op outside Vercel.
+- There is no database or authentication. Server code is limited to two stateless functions in `api/`: the subscription feed and the optional Ask the Almanac endpoint, which calls a free-tier, OpenAI-compatible LLM provider configured by `AI_*` environment variables (see `.env.example` and `docs/ai-features-plan.md`). Everything else runs in the browser. `@vercel/analytics` (mounted in `src/main.tsx`) is the sole telemetry; it is a no-op outside Vercel.
 - `package.json` and `package-lock.json` are the dependency sources of truth. Use npm; do not introduce another package manager's lockfile. Node 20+ is required (`engines`).
 
 | Command | Purpose |
@@ -15,19 +15,20 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 | `npm ci` | Install existing locked dependencies |
 | `npm run dev` | Start Vite on port 3000 (also serves `api/` via the dev plugin) |
 | `npm run lint` | Run `tsc --noEmit`; this is type checking, not ESLint |
-| `npm test` | Node test runner over `tests/*.test.ts` (ICS serialization, subscription feed) |
-| `npm run build` | Build the static app into `dist/`, then bundle the feed function (`npm run build:api`) |
+| `npm test` | Node test runner over `tests/*.test.ts` (ICS serialization, subscription feed, date ranges, almanac tools, Ask loop with a scripted model) |
+| `npm run build` | Build the static app into `dist/`, then bundle the API functions (`npm run build:api`) |
 | `npm run preview` | Serve the built app locally (no `api/`) |
+| `npm run eval:ask` | Live eval of Ask against a real provider (manual only; needs `AI_*` in `.env.local`; spends free quota) |
 
-There is no formatter configuration. `.github/workflows/ci.yml` runs lint, test, and build on pushes to `main` and pull requests. A successful Vite build does not replace the separate type check.
+There is no formatter configuration. `.github/workflows/ci.yml` runs lint, test, and build on pushes to `main` and `dev` and on pull requests. A successful Vite build does not replace the separate type check.
 
-The app needs no API keys or `.env` file to run. The `@/` alias resolves to the repository root, not `src/`.
+The app needs no API keys or `.env` file to run; without `AI_*` settings, `/api/ask` answers 503 `not_configured` and nothing else changes. Never prefix provider settings with `VITE_`, which would inline them into the client bundle. The `@/` alias resolves to the repository root, not `src/`.
 
 ## Hosting and GitHub workflow
 
 The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless functions in `api/`), with the repository on **GitHub**. Pushes to `main` deploy. Keep implementation choices appropriate to a free-tier budget.
 
-- The feed function is **bundled, not traced**: `api/calendar.js` re-exports `server/dist/calendar.js`, which `npm run build` produces with esbuild. Vercel runs the framework build before it packages `api/`, so the bundle exists at trace time. Do not import `src/` or `node_modules` from `api/` directly: Vercel runs functions as native Node ESM and both extensionless relative imports and astronomy-engine's ESM build (not marked `"type": "module"`) crash its loader. `tests/apiRuntime.test.ts` builds and runs the real entry to guard this. During `npm run dev`, the plugin in `vite.config.ts` serves `server/calendar.ts` at `/api/calendar`, so it works locally without `vercel dev`; `vite preview` does not serve it.
+- API functions are **bundled, not traced**: each `api/<name>.js` re-exports `server/dist/<name>.js`, which `npm run build` produces with esbuild from `server/<name>.ts` (entries listed in `scripts/build-api.mjs`). Vercel runs the framework build before it packages `api/`, so the bundle exists at trace time. Do not import `src/` or `node_modules` from `api/` directly: Vercel runs functions as native Node ESM and both extensionless relative imports and astronomy-engine's ESM build (not marked `"type": "module"`) crash its loader. `tests/apiRuntime.test.ts` builds and runs every real entry to guard this, and fails if an `api/` entry has no smoke test. During `npm run dev`, the plugin in `vite.config.ts` serves `server/calendar.ts` at `/api/calendar` and `server/ask.ts` at `/api/ask` (loading `AI_*` from `.env.local` server-side), so both work locally without `vercel dev`; `vite preview` does not serve them.
 
 - Prefer small improvements within the current browser-based React/Vite architecture. Keep infrastructure, dependencies, and ongoing maintenance modest; introduce services or major architectural changes only when the requested feature warrants them.
 - Keep ordinary calendar calculations and exports local to the browser. Avoid adding paid APIs, databases, background services, or another hosting platform as incidental requirements.
@@ -54,8 +55,14 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 | `src/utils/icsExport.ts` | ICS serialization and browser download |
 | `src/utils/subscription.ts` | Webcal feed contract: query parsing/building, rolling window, feed payload, add-to-calendar links |
 | `server/calendar.ts` | Subscription feed handler (`GET`/`HEAD`, Web-standard `Request`/`Response`); loaded directly by the Vite dev plugin and unit tests |
-| `scripts/build-api.mjs` | esbuild step (part of `npm run build`) bundling `server/calendar.ts` + astronomy-engine into `server/dist/calendar.js` (gitignored) |
-| `api/calendar.js` | Committed Vercel function entry; only re-exports the bundle |
+| `server/ask.ts` | Ask the Almanac handler (`POST` JSON, validation, 503 `not_configured`/`resting`/`timeout`/`unavailable`) |
+| `server/ai/ask.ts` | Tool loop and grounding check: answers cite `{{event:id}}` tokens that must match tool results; written dates trigger one correction, then a list of tool results |
+| `server/ai/provider.ts`, `server/ai/prompt.ts` | OpenAI-compatible Chat Completions client with fallback; committed system prompt |
+| `src/utils/almanacTools.ts`, `src/utils/almanacResults.ts` | Deterministic, validated tools the model calls (phases, ingresses, eclipses, a date's snapshot, traditional meanings) and their model/UI output formats |
+| `src/utils/dateRange.ts` | Shared YYYY-MM-DD validation and the 24-month / 3,660-day export limits |
+| `evals/ask-questions.json`, `scripts/eval-ask.ts` | Live Ask eval set and runner (expected events computed by the tools at eval time) |
+| `scripts/build-api.mjs` | esbuild step (part of `npm run build`) bundling each `server/<name>.ts` + astronomy-engine into `server/dist/<name>.js` (gitignored) |
+| `api/calendar.js`, `api/ask.js` | Committed Vercel function entries; only re-export the bundles |
 | `src/utils/icsFormatting.ts` | Shared ICS titles and multiline notes, selected-timezone labels, hemisphere-aware quarter emojis |
 | `src/utils/pdfExport.ts` | Vector data-table PDF and image-based calendar PDF |
 | `src/components/MoonVisual.tsx` | SVG illumination geometry and hemisphere orientation |
