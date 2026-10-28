@@ -15,6 +15,7 @@ import { Hemisphere } from '../../src/types';
 import { EventView, toEventView, toModelResult } from '../../src/utils/almanacResults';
 import { ALMANAC_TOOL_SCHEMAS, AlmanacContext, runAlmanacTool } from '../../src/utils/almanacTools';
 import { getLocalDateComponents } from '../../src/utils/astronomy';
+import { EXPORT_FORMAT_LABELS, ExportDraft } from '../../src/utils/exportDraft';
 import type { AnswerSegment, AskResult, TraceEntry } from '../../src/utils/askClient';
 import { buildCorrectionMessage, buildSystemPrompt } from './prompt';
 import { ChatMessage, ChatModel, ChatTool, ProviderError, ToolCall } from './provider';
@@ -119,6 +120,10 @@ export function checkGrounding(answer: string, known: Map<string, EventView>, qu
 function describeResult(result: ReturnType<typeof runAlmanacTool>): string {
   if ('error' in result) return result.error;
   if ('interpretations' in result) return result.interpretations.map((i) => i.name).join(', ');
+  if ('draft' in result) {
+    const { draft } = result;
+    return `${EXPORT_FORMAT_LABELS[draft.format]} · ${draft.startDate} to ${draft.endDate} · ${draft.timezone}`;
+  }
   const range = result.startDate === result.endDate ? result.startDate : `${result.startDate} to ${result.endDate}`;
   const count = result.truncated ? `${result.total} found, ${result.records.length} returned` : `${result.total} found`;
   return `${range} · ${result.timezone} · ${count}`;
@@ -128,13 +133,13 @@ function byInstant(a: EventView, b: EventView): number {
   return (a.utcTime ?? a.localDateString).localeCompare(b.utcTime ?? b.localDateString);
 }
 
-function fallbackAnswer(found: Map<string, EventView>): { segments: AnswerSegment[]; events: EventView[] } {
+function fallbackAnswer(found: Map<string, EventView>, hasDraft: boolean): { segments: AnswerSegment[]; events: EventView[] } {
   const events = [...found.values()].sort(byInstant);
   if (events.length === 0) {
-    return {
-      segments: [{ type: 'text', text: "I couldn't answer that from the almanac's calculations. Try asking about Moon phases, zodiac signs, or eclipses." }],
-      events: [],
-    };
+    const text = hasDraft
+      ? 'Your export is ready to review below.'
+      : "I couldn't answer that from the almanac's calculations. Try asking about Moon phases, zodiac signs, or eclipses.";
+    return { segments: [{ type: 'text', text }], events: [] };
   }
   const shown = events.slice(0, FALLBACK_EVENT_LIMIT);
   const segments: AnswerSegment[] = [{ type: 'text', text: "Here's what the almanac found:" }];
@@ -155,6 +160,7 @@ export async function askAlmanac(input: AskInput, options: AskOptions): Promise<
     { role: 'user', content: input.question },
   ];
   const found = new Map<string, EventView>();
+  let exportDraft: ExportDraft | null = null;
   const trace: TraceEntry[] = [];
   let model: string | null = null;
   let toolRounds = 0;
@@ -175,6 +181,8 @@ export async function askAlmanac(input: AskInput, options: AskOptions): Promise<
         if (!found.has(record.id)) found.set(record.id, toEventView(record, result.timezone, input.hemisphere));
       }
     }
+    // The latest valid draft wins, so a corrected call replaces an earlier one.
+    if ('draft' in result) exportDraft = result.draft;
     trace.push({ tool: call.function.name, arguments: args, ok: result.ok, detail: describeResult(result) });
     return JSON.stringify(toModelResult(result));
   };
@@ -213,6 +221,7 @@ export async function askAlmanac(input: AskInput, options: AskOptions): Promise<
         model,
         source: 'model',
         corrections,
+        exportDraft,
       };
     }
     if (corrections > 0) break;
@@ -220,5 +229,5 @@ export async function askAlmanac(input: AskInput, options: AskOptions): Promise<
     messages.push({ role: 'assistant', content: answer }, { role: 'user', content: buildCorrectionMessage(check.problems) });
   }
 
-  return { ...fallbackAnswer(found), trace, model, source: 'fallback', corrections };
+  return { ...fallbackAnswer(found, exportDraft !== null), trace, model, source: 'fallback', corrections, exportDraft };
 }

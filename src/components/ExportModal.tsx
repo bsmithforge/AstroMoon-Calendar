@@ -5,19 +5,17 @@ import {
   X,
   Check,
   AlertCircle,
+  Feather,
 } from 'lucide-react';
 import { FilterSettings } from '../types';
-import {
-  filterAstroRecords,
-  generateRangeDataset,
-  generateMonthData,
-} from '../utils/astronomy';
+import { generateMonthData } from '../utils/astronomy';
 import {
   countMonthsSpanned,
   getCalendarPdfRangeError,
   getDateRangeError,
   getRecordExportRangeError,
 } from '../utils/dateRange';
+import { EXPORT_FORMAT_LABELS, ExportDraft, getExportRecords } from '../utils/exportDraft';
 import { downloadIcsFile, generateIcsPayload } from '../utils/icsExport';
 import { CalendarGrid } from './CalendarGrid';
 
@@ -26,6 +24,8 @@ interface ExportModalProps {
   filters: FilterSettings;
   currentYear: number;
   currentMonth: number;
+  /** Settings prepared by Ask. The form starts from them instead of app state; nothing downloads until the user chooses. */
+  draft?: ExportDraft | null;
   onClose: () => void;
 }
 
@@ -37,6 +37,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
   filters,
   currentYear,
   currentMonth,
+  draft,
   onClose,
 }) => {
   const defaultStart =
@@ -47,29 +48,35 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
     filters.endDate ||
     `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(defaultLastDay).padStart(2, '0')}`;
 
-  const [startDate, setStartDate] = useState(defaultStart);
-  const [endDate, setEndDate] = useState(defaultEnd);
+  // A draft may name another timezone or hemisphere; the main calendar keeps its own.
+  const timezone = draft?.timezone ?? filters.timezone;
+  const hemisphere = draft?.hemisphere ?? filters.hemisphere;
+
+  const [startDate, setStartDate] = useState(draft?.startDate ?? defaultStart);
+  const [endDate, setEndDate] = useState(draft?.endDate ?? defaultEnd);
   const [activePreset, setActivePreset] = useState<'currentMonth' | 'next3Months' | 'fullYear' | 'custom'>(
-    filters.rangePreset === 'year'
+    draft
+      ? 'custom'
+      : filters.rangePreset === 'year'
       ? 'fullYear'
       : filters.rangePreset === 'threeMonths'
       ? 'next3Months'
       : 'currentMonth'
   );
   const [includeMajorPhases, setIncludeMajorPhases] = useState(
-    filters.showFullNewMoon
+    draft?.includeMajorPhases ?? filters.showFullNewMoon
   );
   const [includeIngresses, setIncludeIngresses] = useState(
-    filters.showIngresses
+    draft?.includeIngresses ?? filters.showIngresses
   );
   const [includeDailySigns, setIncludeDailySigns] = useState(
-    filters.showDailySigns
+    draft?.includeDailySigns ?? filters.showDailySigns
   );
-  const [includeEclipses, setIncludeEclipses] = useState(filters.showEclipses);
+  const [includeEclipses, setIncludeEclipses] = useState(draft?.includeEclipses ?? filters.showEclipses);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
 
   // Quick preset ranges keyed to user's active year & month
-  const [pdfMode, setPdfMode] = useState<'calendar' | 'table'>('calendar');
+  const [pdfMode, setPdfMode] = useState<'calendar' | 'table'>(draft?.format === 'table_pdf' ? 'table' : 'calendar');
   const [isExporting, setIsExporting] = useState(false);
   const captureRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -112,6 +119,8 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
   const exportFilters = useMemo(
     () => ({
       ...filters,
+      timezone,
+      hemisphere,
       startDate,
       endDate,
       showFullNewMoon: includeMajorPhases,
@@ -121,6 +130,8 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
     }),
     [
       filters,
+      timezone,
+      hemisphere,
       startDate,
       endDate,
       includeMajorPhases,
@@ -147,14 +158,22 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
         return {
           key: `${year}-${month}`,
           label: new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-          days: generateMonthData(year, month, filters.hemisphere, filters.timezone),
+          days: generateMonthData(year, month, hemisphere, timezone),
         };
       });
       return { exportMonths: months, calculationError: null };
     } catch {
       return { exportMonths: [], calculationError: 'Unable to calculate this calendar. Try another date range or timezone.' };
     }
-  }, [calendarError, monthCount, startYear, startMonth, filters.hemisphere, filters.timezone]);
+  }, [calendarError, monthCount, startYear, startMonth, hemisphere, timezone]);
+
+  // The draft's format is emphasized, not chosen: the user still taps to download,
+  // which also keeps iOS's requirement that downloads start from a user gesture.
+  const suggestIcs = draft?.format === 'ics';
+  const suggestPdf =
+    (draft?.format === 'calendar_pdf' && pdfMode === 'calendar') ||
+    (draft?.format === 'table_pdf' && pdfMode === 'table');
+  const suggestedRing = 'ring-2 ring-[#B89A62] ring-offset-2 ring-offset-[#FAF7F0]';
 
   const handleRangePreset = (
     type: 'currentMonth' | 'next3Months' | 'fullYear'
@@ -183,26 +202,18 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
     }
   };
 
-  // Generate shared filtered records for export
-  const getFilteredExportRecords = () => {
-    if (recordRangeError) throw new Error(recordRangeError);
-    const { records } = generateRangeDataset(
+  // Shared filtered records for ICS and data-table exports (the same function a draft is tested against)
+  const getFilteredExportRecords = () =>
+    getExportRecords({
       startDate,
       endDate,
-      filters.hemisphere,
-      filters.timezone
-    );
-
-    return filterAstroRecords(records, {
-      ...filters,
-      startDate,
-      endDate,
-      showFullNewMoon: includeMajorPhases,
-      showIngresses: includeIngresses,
-      showDailySigns: includeDailySigns,
-      showEclipses: includeEclipses,
+      timezone,
+      hemisphere,
+      includeMajorPhases,
+      includeIngresses,
+      includeDailySigns,
+      includeEclipses,
     });
-  };
 
   const handleDownloadIcs = () => {
     if (isExporting || recordRangeError) return;
@@ -217,8 +228,8 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
       const icsString = generateIcsPayload(
         exportRecords,
         calendarTitle,
-        filters.timezone,
-        filters.hemisphere
+        timezone,
+        hemisphere
       );
 
       const filename = `astromoon-calendar-${startDate}_to_${endDate}`;
@@ -371,6 +382,24 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
         {/* Modal Content */}
         <div className="min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain">
         <fieldset disabled={isExporting} className="min-w-0 p-4 sm:p-6 space-y-5 bg-[#FAF7F0]">
+          {draft && (
+            <div id="export-draft-banner" className="space-y-1.5 rounded-md border border-[#B89A62] bg-[#F6EFE0] p-3.5 text-xs leading-relaxed text-[#182421]">
+              <p className="flex items-start gap-2 font-semibold">
+                <Feather size={15} className="mt-0.5 shrink-0 text-[#B89A62]" />
+                Prefilled from your request. Review before downloading.
+              </p>
+              <p className="text-[#5F6D61]">
+                Suggested: {EXPORT_FORMAT_LABELS[draft.format]}. Nothing downloads until you choose below, and your calendar’s own settings don’t change.
+              </p>
+              {timezone !== filters.timezone && (
+                <p className="break-words">Times in <strong>{timezone}</strong> (your calendar uses {filters.timezone}).</p>
+              )}
+              {hemisphere !== filters.hemisphere && (
+                <p>Moon orientation: <strong>{hemisphere} hemisphere</strong> (your calendar uses {filters.hemisphere}).</p>
+              )}
+            </div>
+          )}
+
           {/* Calendar Compatibility Notice */}
           <div className="p-3.5 rounded-md bg-[#EBE3D0] border border-[#D8D0BF] flex items-start gap-2.5 text-xs text-[#182421]">
             <AlertCircle size={16} strokeWidth={2} className="w-4 h-4 text-[#B89A62] shrink-0 mt-0.5" />
@@ -546,7 +575,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
             {pdfMode === 'calendar'
               ? 'Calendar PDF includes every whole month touched by your dates, one per A4 page (maximum 24 months). It always uses the full desktop layout.'
               : 'Data-table PDF includes events within your selected dates. ICS and data-table exports support up to 3,660 days per download.'}
-            {' '}Moon orientation: {filters.hemisphere} hemisphere.
+            {' '}Moon orientation: {hemisphere} hemisphere.
           </p>
           {(rangeError || recordRangeError || (pdfMode === 'calendar' && (calendarError || calculationError))) && (
             <p role="alert" className="rounded-md border border-[#B44732]/40 p-3 text-sm text-[#B44732]">
@@ -560,13 +589,13 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
               id="export-ics-action-btn"
               onClick={handleDownloadIcs}
               disabled={isExporting || !!recordRangeError}
-              className="p-4 rounded-md bg-[#FAF6EE] border border-[#B44732]/40 hover:border-[#B44732] text-left transition flex flex-col justify-between group shadow-xs hover:bg-[#FFFDF9] disabled:opacity-60 disabled:cursor-not-allowed"
+              className={`p-4 rounded-md bg-[#FAF6EE] border border-[#B44732]/40 hover:border-[#B44732] text-left transition flex flex-col justify-between group shadow-xs hover:bg-[#FFFDF9] disabled:opacity-60 disabled:cursor-not-allowed ${suggestIcs ? suggestedRing : ''}`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <CalendarIcon size={20} strokeWidth={2} className="w-5 h-5 text-[#B44732] group-hover:scale-105 transition shrink-0" />
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#B44732]/15 text-[#B44732]">
-                    RFC 5545
+                    {suggestIcs ? 'Suggested' : 'RFC 5545'}
                   </span>
                 </div>
                 <h4 className="font-serif-almanac font-semibold text-sm text-[#182421]">
@@ -585,13 +614,13 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
               id="export-pdf-action-btn"
               onClick={handleDownloadPdf}
               disabled={isExporting || !!(pdfMode === 'calendar' ? calendarError || calculationError : recordRangeError)}
-              className="p-4 rounded-md bg-[#FAF6EE] border border-[#182421]/30 hover:border-[#182421] text-left transition flex flex-col justify-between group shadow-xs hover:bg-[#FFFDF9] disabled:opacity-60 disabled:cursor-wait disabled:hover:border-[#182421]/30"
+              className={`p-4 rounded-md bg-[#FAF6EE] border border-[#182421]/30 hover:border-[#182421] text-left transition flex flex-col justify-between group shadow-xs hover:bg-[#FFFDF9] disabled:opacity-60 disabled:cursor-wait disabled:hover:border-[#182421]/30 ${suggestPdf ? suggestedRing : ''}`}
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <FileText size={20} strokeWidth={2} className="w-5 h-5 text-[#182421] group-hover:scale-105 transition shrink-0" />
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#182421]/10 text-[#182421]">
-                    {pdfMode === 'calendar' ? 'Calendar' : 'Data table'}
+                    {suggestPdf ? 'Suggested' : pdfMode === 'calendar' ? 'Calendar' : 'Data table'}
                   </span>
                 </div>
                 <h4 className="font-serif-almanac font-semibold text-sm text-[#182421]">
@@ -617,7 +646,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
         {/* Footer */}
         <div className="shrink-0 p-4 border-t border-[#D8D0BF] bg-[#EBE3D0] flex items-center justify-between gap-3 text-xs">
           <span className="min-w-0 break-words text-[#5F6D61]">
-            Timezone: {filters.timezone}
+            Timezone: {timezone}
           </span>
           <button
             onClick={() => { if (!isExporting) onClose(); }}
@@ -654,7 +683,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
               {mo.label}
             </h3>
             <p className="text-[11px] text-[#5F6D61] mb-3 font-sans-almanac">
-              AstroMoon · Noon snapshots · Zone: {filters.timezone}
+              AstroMoon · Noon snapshots · Zone: {timezone}
             </p>
             <CalendarGrid
               days={mo.days}

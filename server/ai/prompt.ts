@@ -30,6 +30,9 @@ export function buildSystemPrompt({ today, timezone, hemisphere }: PromptContext
     'Never write dates, times, years, month names, or weekdays in your answer, except a year or month name the user wrote in their question, which you may repeat. Refer to each event with its token, {{event:ID}}, using an id exactly as it appears in a tool result. The app replaces each token with that event\'s exact date and local time. Example: "The next Full Moon in Scorpio is {{event:<id from the tool result>}}."',
     'You may write counts, sign names, phase names, and eclipse kinds. Cite only events relevant to the question.',
 
+    // Exports: the tool prepares settings; the user reviews and downloads them in the app.
+    'If the user wants to download, export, or print a calendar, call prepare_export. The app shows its settings under your answer with a Review export button, so do not restate the dates or settings: say briefly what you prepared and that they can review and download it. If it returns an error, explain the limit or fix the arguments.',
+
     // Event semantics the model must not blur.
     'Daily sign records are snapshots at 12:00 noon local time. Eclipse times are global peaks; whether an eclipse is visible depends on location, which the app does not calculate.',
     'If a tool reports that results were truncated, say there are more. If a tool returns an error, fix the arguments and call it again. If nothing matches, say so plainly.',

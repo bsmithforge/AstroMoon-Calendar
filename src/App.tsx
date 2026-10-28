@@ -19,6 +19,7 @@ import { MethodologyModal } from './components/MethodologyModal';
 import { AskExchange, AskModal } from './components/AskModal';
 import { generateMonthData, generateRangeDataset, getLocalDateComponents } from './utils/astronomy';
 import { EventView } from './utils/almanacResults';
+import { ExportDraft } from './utils/exportDraft';
 import { ArrowUpRight, Rss, ShieldCheck, Sparkles } from 'lucide-react';
 
 function getPresetRange(year: number, month: number, preset: CalendarViewMode) {
@@ -86,6 +87,8 @@ export function App() {
   const [isMethodologyModalOpen, setIsMethodologyModalOpen] = useState<boolean>(false);
   const [isAskModalOpen, setIsAskModalOpen] = useState<boolean>(false);
   const [lastAskExchange, setLastAskExchange] = useState<AskExchange | null>(null);
+  // Settings from Ask for the export dialog; cleared on close so the header's Export starts from app state.
+  const [exportDraft, setExportDraft] = useState<ExportDraft | null>(null);
 
   // Synchronized filter updater
   const handleFilterChange = (newFilters: Partial<FilterSettings>) => {
@@ -141,6 +144,12 @@ export function App() {
     setIsAskModalOpen(false);
     handleMonthChange(year, month - 1);
     if (days[0]) setSelectedDay(days[0]);
+  };
+
+  const handleReviewExport = (draft: ExportDraft) => {
+    setIsAskModalOpen(false);
+    setExportDraft(draft);
+    setIsExportModalOpen(true);
   };
 
   // Monthly calendar dataset computed with astronomy-engine
@@ -407,7 +416,11 @@ export function App() {
         filters={filters}
         currentYear={currentYear}
         currentMonth={currentMonth}
-        onClose={() => setIsExportModalOpen(false)}
+        draft={exportDraft}
+        onClose={() => {
+          setIsExportModalOpen(false);
+          setExportDraft(null);
+        }}
       />
 
       <SubscribeModal
@@ -433,6 +446,7 @@ export function App() {
         lastExchange={lastAskExchange}
         onExchange={setLastAskExchange}
         onOpenEvent={handleOpenAskEvent}
+        onReviewExport={handleReviewExport}
         onClose={() => setIsAskModalOpen(false)}
       />
     </div>
