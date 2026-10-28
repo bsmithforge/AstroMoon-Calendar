@@ -227,6 +227,7 @@ export function App() {
         onOpenSubscribeModal={() => setIsSubscribeModalOpen(true)}
         onOpenInfoModal={() => setIsZodiacGuideOpen(true)}
         onOpenMethodologyModal={() => setIsMethodologyModalOpen(true)}
+        onOpenAskModal={() => setIsAskModalOpen(true)}
       />
 
       {/* Control Panel: Navigation, Filters, Hemisphere, Display Toggles, Timezone */}
