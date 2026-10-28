@@ -1,5 +1,6 @@
 import React from 'react';
 import { DayLunarData, FilterSettings } from '../types';
+import { includesQuarter } from '../utils/astronomy';
 import { MoonVisual } from './MoonVisual';
 
 interface CalendarGridProps {
@@ -58,7 +59,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
               : day.quarterType === 'First Quarter'
               ? '🌓'
               : '🌗';
-          const showMajor = day.hasMajorQuarter && filters.showFullNewMoon;
+          const showMajor = day.hasMajorQuarter && includesQuarter(filters, day.quarterType);
           const showIngress = day.hasIngress && filters.showIngresses;
           const showDailySign = filters.showDailySigns;
           const showEclipse = day.hasEclipse && filters.showEclipses;

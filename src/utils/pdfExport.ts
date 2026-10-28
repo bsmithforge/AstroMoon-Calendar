@@ -94,7 +94,7 @@ export function generatePdfDocument(
   doc.setFontSize(7.5);
   doc.setTextColor(24, 36, 33);
   doc.text(
-    `Summary: ${quartersCount} Moon Quarters | ${ingressesCount} Sign Ingresses | ${eclipsesCount} Eclipses | ${dailyCount} Daily Snapshots`,
+    `Summary: ${quartersCount} Moon Phases | ${ingressesCount} Sign Ingresses | ${eclipsesCount} Eclipses | ${dailyCount} Daily Snapshots`,
     margin + 3,
     y + 4.6
   );

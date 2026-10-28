@@ -7,7 +7,7 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 **Product priorities:** Exports are the main feature. Reliable, accurate, usable downloaded calendars and PDFs take priority when evaluating changes. The entire app must be fully mobile compatible, including export configuration and file delivery. Existing mobile issues are cleanup work to address in a dedicated task, not evidence that mobile support is optional or already complete.
 
 - Stack: React 19, TypeScript, Vite 6, Tailwind CSS 4 via `@tailwindcss/vite`, Lucide icons, and `astronomy-engine` pinned to **2.1.19**. PDF exports use jsPDF and, for calendar images, `html-to-image`.
-- There is no database, authentication, or third-party API integration. The only server code is the stateless subscription feed in `api/`; everything else runs in the browser. `@vercel/analytics` (mounted in `src/main.tsx`) is the sole telemetry; it is a no-op outside Vercel.
+- There is no database or authentication. Server code is limited to two stateless functions in `api/`: the subscription feed and the optional Ask the Almanac endpoint, which calls a free-tier, OpenAI-compatible LLM provider configured by `AI_*` environment variables (see `.env.example` and `docs/ai-features-plan.md`). Everything else runs in the browser. `@vercel/analytics` (mounted in `src/main.tsx`) is the sole telemetry; it is a no-op outside Vercel.
 - `package.json` and `package-lock.json` are the dependency sources of truth. Use npm; do not introduce another package manager's lockfile. Node 20+ is required (`engines`).
 
 | Command | Purpose |
@@ -15,19 +15,21 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 | `npm ci` | Install existing locked dependencies |
 | `npm run dev` | Start Vite on port 3000 (also serves `api/` via the dev plugin) |
 | `npm run lint` | Run `tsc --noEmit`; this is type checking, not ESLint |
-| `npm test` | Node test runner over `tests/*.test.ts` (ICS serialization, subscription feed) |
-| `npm run build` | Build the static app into `dist/`, then bundle the feed function (`npm run build:api`) |
+| `npm test` | Node test runner over `tests/*.test.ts` (ICS serialization, subscription feed, date ranges, almanac tools, Ask loop with a scripted model) |
+| `npm run build` | Build the static app into `dist/`, then bundle the API functions (`npm run build:api`) |
 | `npm run preview` | Serve the built app locally (no `api/`) |
+| `npm run eval:ask` | Live eval of Ask against a real provider (manual only; needs `AI_*` in `.env.local`; spends free quota) |
+| `npm run eval:themes` | Eval of on-device theme search with the real model in Node (manual only; needs `TRANSFORMERS_MODULE` pointing at `@huggingface/transformers@4.3.1` installed outside the project, see the script) |
 
-There is no formatter configuration. `.github/workflows/ci.yml` runs lint, test, and build on pushes to `main` and pull requests. A successful Vite build does not replace the separate type check.
+There is no formatter configuration. `.github/workflows/ci.yml` runs lint, test, and build on pushes to `main` and `dev` and on pull requests. A successful Vite build does not replace the separate type check.
 
-The app needs no API keys or `.env` file to run. The `@/` alias resolves to the repository root, not `src/`.
+The app needs no API keys or `.env` file to run; without `AI_*` settings, `/api/ask` answers 503 `not_configured` and nothing else changes. Never prefix provider settings with `VITE_`, which would inline them into the client bundle. The chosen providers (Groq primary, Gemini fallback) and their eval results and data terms are in `docs/ai-evals.md`. `AI_FALLBACK_EXCLUDED_COUNTRIES` keeps the Gemini free tier away from the EEA, UK, and Switzerland as its terms require; it fails closed when Vercel's country header is missing, so the fallback is skipped under `npm run dev`. The `@/` alias resolves to the repository root, not `src/`.
 
 ## Hosting and GitHub workflow
 
 The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless functions in `api/`), with the repository on **GitHub**. Pushes to `main` deploy. Keep implementation choices appropriate to a free-tier budget.
 
-- The feed function is **bundled, not traced**: `api/calendar.js` re-exports `server/dist/calendar.js`, which `npm run build` produces with esbuild. Vercel runs the framework build before it packages `api/`, so the bundle exists at trace time. Do not import `src/` or `node_modules` from `api/` directly: Vercel runs functions as native Node ESM and both extensionless relative imports and astronomy-engine's ESM build (not marked `"type": "module"`) crash its loader. `tests/apiRuntime.test.ts` builds and runs the real entry to guard this. During `npm run dev`, the plugin in `vite.config.ts` serves `server/calendar.ts` at `/api/calendar`, so it works locally without `vercel dev`; `vite preview` does not serve it.
+- API functions are **bundled, not traced**: each `api/<name>.js` re-exports `server/dist/<name>.js`, which `npm run build` produces with esbuild from `server/<name>.ts` (entries listed in `scripts/build-api.mjs`). Vercel runs the framework build before it packages `api/`, so the bundle exists at trace time. Do not import `src/` or `node_modules` from `api/` directly: Vercel runs functions as native Node ESM and both extensionless relative imports and astronomy-engine's ESM build (not marked `"type": "module"`) crash its loader. `tests/apiRuntime.test.ts` builds and runs every real entry to guard this, and fails if an `api/` entry has no smoke test. During `npm run dev`, the plugin in `vite.config.ts` serves `server/calendar.ts` at `/api/calendar` and `server/ask.ts` at `/api/ask` (loading `AI_*` from `.env.local` server-side), so both work locally without `vercel dev`; `vite preview` does not serve them.
 
 - Prefer small improvements within the current browser-based React/Vite architecture. Keep infrastructure, dependencies, and ongoing maintenance modest; introduce services or major architectural changes only when the requested feature warrants them.
 - Keep ordinary calendar calculations and exports local to the browser. Avoid adding paid APIs, databases, background services, or another hosting platform as incidental requirements.
@@ -51,11 +53,21 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 | `src/components/DayDetailModal.tsx` | Noon snapshot, exact events, single-day ICS download |
 | `src/components/ExportModal.tsx` | Export ranges/toggles, downloads, off-screen calendar capture |
 | `src/components/SubscribeModal.tsx` | Live-feed event selection, calendar-app links, and subscription URL copy flow |
+| `src/components/AskModal.tsx`, `src/components/AlmanacScroll.tsx` | Ask the Almanac as an unrolling parchment scroll: one prompt line, suggestions as italic phrases, answers inked with brass-underlined events that open the cited day, the export draft as a sealed note, "How this was answered" and privacy as footnotes. `AlmanacScroll.tsx` holds the shared rods, prompt, suggestions, phase-cycling Moon loader, and `useUnroll()`. Animations live in `index.css` (`almanac-*`) and switch off under reduced motion. |
+| `src/utils/askClient.ts` | `/api/ask` client, shared Ask response types, engine-based event time/title formatting for chips |
 | `src/utils/icsExport.ts` | ICS serialization and browser download |
 | `src/utils/subscription.ts` | Webcal feed contract: query parsing/building, rolling window, feed payload, add-to-calendar links |
 | `server/calendar.ts` | Subscription feed handler (`GET`/`HEAD`, Web-standard `Request`/`Response`); loaded directly by the Vite dev plugin and unit tests |
-| `scripts/build-api.mjs` | esbuild step (part of `npm run build`) bundling `server/calendar.ts` + astronomy-engine into `server/dist/calendar.js` (gitignored) |
-| `api/calendar.js` | Committed Vercel function entry; only re-exports the bundle |
+| `server/ask.ts` | Ask the Almanac handler (`POST` JSON, validation, 503 `not_configured`/`resting`/`timeout`/`unavailable`) |
+| `server/ai/ask.ts` | Tool loop and grounding check: answers cite `{{event:id}}` tokens that must match tool results; written dates trigger one correction, then a list of tool results |
+| `server/ai/provider.ts`, `server/ai/prompt.ts` | OpenAI-compatible Chat Completions client with fallback; committed system prompt |
+| `src/utils/almanacTools.ts`, `src/utils/almanacResults.ts` | Deterministic, validated tools the model calls (phases, ingresses, eclipses, a date's snapshot, traditional meanings) and their model/UI output formats |
+| `src/utils/dateRange.ts` | Shared YYYY-MM-DD validation and the 24-month / 3,660-day export limits |
+| `src/components/ThemeSearchPanel.tsx`, `src/utils/themeCorpus.ts`, `src/utils/themeSearch.ts`, `src/utils/themeModel.ts`, `src/workers/themeWorker.ts` | On-device theme search (Ask dialog's second tab): corpus from the app's own sign/phase copy, pure ranking and upcoming-day runs, and an all-MiniLM-L6-v2 embedder in a Web Worker. transformers.js is imported from jsDelivr at exactly 4.3.1 (not an npm dependency); the model (~29 MB) downloads only after an explicit tap. |
+| `src/utils/exportDraft.ts` | `ExportDraft`/`ExportSettings` shared by `ExportModal` and Ask's `prepare_export`, per-format draft checks, `getExportRecords()` for ICS/table records |
+| `evals/ask-questions.json`, `scripts/eval-ask.ts` | Live Ask eval set and runner (expected events computed by the tools at eval time) |
+| `scripts/build-api.mjs` | esbuild step (part of `npm run build`) bundling each `server/<name>.ts` + astronomy-engine into `server/dist/<name>.js` (gitignored) |
+| `api/calendar.js`, `api/ask.js` | Committed Vercel function entries; only re-export the bundles |
 | `src/utils/icsFormatting.ts` | Shared ICS titles and multiline notes, selected-timezone labels, hemisphere-aware quarter emojis |
 | `src/utils/pdfExport.ts` | Vector data-table PDF and image-based calendar PDF |
 | `src/components/MoonVisual.tsx` | SVG illumination geometry and hemisphere orientation |
@@ -68,12 +80,12 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 ## Domain rules to preserve
 
 - Timed events carry absolute instants in `utcTime`. `localDateString` and displayed times refer to the selected IANA timezone. Use `getUtcForLocalTime()` and `getLocalDateComponents()` instead of relying on the browser's timezone or parsing a bare date as a local instant.
-- Daily signs and phases are snapshots at **12:00 local time**. They are distinct from exact quarter, ingress, and eclipse events. Phase category windows in `getMoonPhaseInfo()` do not determine exact quarter times.
+- Daily signs and phases are snapshots at **12:00 local time**. They are distinct from exact quarter, ingress, and eclipse events. Phase category windows in `getMoonPhaseInfo()` do not determine exact quarter times. One exception for daily phase *names*: `getDayPhaseInfo()` gives a primary phase name (New, First Quarter, Full, Third Quarter) to the day its exact event falls on, even when noon is outside the ±6° window, and gives a neighbouring day inside the window the adjacent waxing/waning name. Illumination, angle, and drawings stay at noon. Each exact quarter therefore names exactly one day in the grid, day details, PDFs, ICS daily summaries, and Ask.
 - App/month-grid month indexes are **0–11**. Timezone helper month arguments and URL `month` values are **1–12**. Date ranges use `YYYY-MM-DD` and are intended to include both endpoint dates.
 - Zodiac positions use twelve equal 30-degree tropical sectors, with Aries at 0 degrees. Preserve normalization to `[0, 360)` and the Pisces-to-Aries wraparound. Ingress bisection narrows the bracket to at most one second; that numerical precision is not proof of empirical accuracy.
 - Hemisphere selection changes Moon presentation, not the event instant, longitude, or illumination fraction. Check SVGs and emoji/text representations when modifying it.
 - Eclipse records represent global peaks, separate from new/full Moon instants. Keep global occurrence distinct from local visibility. Label astrological themes as traditional interpretations.
-- Despite its name, `showFullNewMoon` controls **all four primary quarters** in the shared record filter. Preserve consistent toggle semantics across consumers when changing filters.
+- Despite its name, `showFullNewMoon` controls **all four primary quarters** in the shared record filter. Exports can narrow it with the optional `quarterPhases: 'newAndFull'` (the export dialog's "New & Full only", Ask's `new_and_full_moons`); the main calendar and subscription feed never set it. Check quarters through `includesQuarter()`, which `filterAstroRecords()`, `CalendarGrid`, and `TimelineView` share. Preserve consistent toggle semantics across consumers when changing filters.
 - Keep calculations deterministic for their supplied dates/timezone and avoid adding expensive event searches inside per-cell rendering. Range generation is synchronous and can be costly for long intervals.
 
 ## Exports: primary product workflow
@@ -88,7 +100,7 @@ Treat the exported files as user-facing deliverables. Changes to dates, filters,
 | Data-table PDF | The same filtered range records as range ICS → dynamically imported `generatePdfDocument()` → jsPDF `save()` |
 | Calendar PDF (default PDF mode) | Months spanned by export dates → `generateMonthData()` → off-screen `CalendarGrid` with export toggles → PNG captures → `generateCalendarPdf()` → jsPDF `save()` |
 
-The export and subscription dialogs initialize their own toggles from app state; modal edits do not update the main calendar filters. The export dialog also initializes its dates from app state. Check initialization, reopening, and preset changes when modifying these workflows. ICS files are static, one-time imports, not subscriptions or a live calendar sync.
+The export and subscription dialogs initialize their own toggles from app state; modal edits do not update the main calendar filters. The export dialog also initializes its dates from app state, unless Ask's "Review export" passes a `draft`: then dates, toggles, PDF layout, timezone, and hemisphere come from the draft (shown in a banner), App clears the draft on close, and the user still taps to download. Range ICS and table PDF records come from `getExportRecords()` either way. Check initialization, reopening, and preset changes when modifying these workflows. ICS files are static, one-time imports, not subscriptions or a live calendar sync.
 
 - ICS serializers accept already-selected records. Preserve CRLF endings, escaped text, UTF-8-safe folding at 75 bytes including continuation whitespace, UTC `Z` timestamps for timed events, and exclusive next-day `DTEND` for all-day events.
 - Current ICS UIDs are `${rec.id}@astromooncal.app`. Preserve event identity when changing generation/serialization so repeated imports do not unexpectedly duplicate events. Timed events currently have a one-hour export duration.
@@ -96,6 +108,7 @@ The export and subscription dialogs initialize their own toggles from app state;
 - Data-table PDFs consume filtered records and use standard PDF fonts with text sanitization, fixed-height rows, truncation, repeated headers, and page numbering.
 - Calendar PDFs capture off-screen `CalendarGrid` instances with `html-to-image`, one month per A4 page. They currently include whole months spanned by the selected range, capped at 24 months. Preserve the capture attributes `data-export-month` and `data-month-label`, and check both PDF modes after shared grid/export changes.
 - Keep PDF/image dependencies dynamically imported from the export actions unless there is a concrete reason to change loading behavior.
+- Don't use `React.lazy` without an error boundary: a failed chunk import (offline, or after a deploy renames chunks) unmounts the whole app. `AskModal` loads the theme search panel by hand and shows a retryable message instead. Keep slow synchronous work (range datasets, capture grids) out of tap handlers and first renders; the export dialog defers its capture grids with `useDeferredValue` for this reason.
 
 When changing export behavior:
 
@@ -105,6 +118,17 @@ When changing export behavior:
 - Calendar capture uses a 900px-wide, inert off-screen container, `pixelRatio: 2`, `skipFonts: true`, a font readiness wait, a warm-up capture, and sequential month captures. `CalendarGrid` uses named container queries (`calendar`) so the capture always uses the full desktop layout regardless of the browser viewport. Preserve container-based breakpoints for all responsive grid content. Check fonts, SVGs, and layout in files generated from both mobile and desktop.
 - Keep capture memory bounded. The current implementation retains every month's PNG until PDF assembly; do not raise range/resolution limits or parallelize all captures without evaluating phone memory and responsiveness. Off-screen content must remain renderable for capture while staying out of the interactive/accessibility flow.
 - Keep generation state, duplicate-click protection, recoverable errors, and cleanup dependable. A success message after initiating a browser download is not proof that the user saved or imported the file. Verify actual file delivery when changing Blob URLs, asynchronous PDF actions, or download handling.
+
+## AI features: rules to preserve
+
+Three features use AI: Ask the Almanac (`/api/ask`), export drafts (Ask's `prepare_export`), and on-device theme search. The design, phases, and decisions are in `docs/ai-features-plan.md`; provider and model evals are in `docs/ai-evals.md`.
+
+- **The model never writes timestamps.** Facts come only from the deterministic tools in `src/utils/almanacTools.ts`. Answers cite events as `{{event:<id>}}` tokens that `server/ai/ask.ts` checks against the tool results; a date, time, year, month, or weekday the model writes itself (and the user didn't type) gets one correction, then a templated list. The browser renders every date and time from engine event views, never from model text.
+- **Exports stay free of AI text.** `prepare_export` returns settings, never a file or wording; the export dialog builds ICS and PDFs from those settings exactly as it does from settings entered by hand (a test checks identical records and ICS bytes), and the user still taps to download. Model output never reaches an exported file.
+- **Keys stay on the server.** Provider settings are `AI_*` environment variables read by the function; never prefix them with `VITE_`. CI and tests use scripted models and fake `fetch`, and never need a key.
+- **Changing tools or the prompt:** keep tool arguments validated before any search runs, add unit tests, update `evals/ask-questions.json` when behaviour changes, and rerun `npm run eval:ask` against each configured provider before relying on a prompt change. Provider changes are configuration; record them and their data terms in `docs/ai-evals.md`, including regional limits such as `AI_FALLBACK_EXCLUDED_COUNTRIES`.
+- **Free-tier budget:** no billing on provider accounts. Keep the handler's limits (400-character questions, 4 tool rounds, bounded tokens and ranges) and the "resting" state when quota runs out; the WAF rate-limit rule on `/api/ask` is configured in Vercel, not in code.
+- **Theme search stays on the device.** Its corpus is the app's own sign and phase copy; queries never leave the browser; the model loads in a Web Worker, only after the user's first theme search (its size is stated next to the prompt). Run `npm run eval:themes` after changing the corpus, ranking, or model.
 
 ## Full mobile compatibility
 
@@ -123,7 +147,7 @@ Mobile is a required first-class experience across navigation, all views, filter
 - Keep hooks unconditional and above early returns. Preserve StrictMode and use stable keys/unique SVG IDs for repeated calendars and export captures.
 - Preserve the almanac design unless redesign is requested: parchment `#F3EDDF`, ink `#182421`, vermilion `#B44732`, brass `#B89A62`, sage `#657367`, and border `#D8D0BF`. Reuse the existing serif/sans font classes, `MoonVisual`, and Lucide icons.
 - Controls and chips use `rounded-md`/`rounded-sm`; reserve `rounded-full` for true circles (Moon engravings, the today marker, dots, the small check badge). Avoid reintroducing pill-shaped buttons.
-- The header has Month/Timeline/Year navigation, a Learn disclosure for the zodiac guide and methodology, and Share/Subscribe/Export actions that collapse to 44px icon-only buttons below `sm` (labels stay in `aria-label`). Share uses the Web Share API when available and otherwise copies the current URL (which carries `?year&month`) with a short "Copied" state. Event filters use labeled icon checkboxes; timezone and hemisphere controls live in the expandable Your sky section. Keep selected states understandable without color alone and all settings reachable by touch and keyboard. Learn closes on outside pointer/focus events; do not close it on blur alone, which can hide its buttons before a touch click is delivered.
+- The header has Month/Timeline/Year navigation, a Learn disclosure for the zodiac guide and methodology, and Share/Subscribe/Export actions that collapse to 44px icon-only buttons below `sm` (labels stay in `aria-label`). The labeled Ask button sits beside the live Moon reading, not in that group, which is already full at 320px. Ask answers show dates only through event chips formatted from engine event views; never render a date from model text. Share uses the Web Share API when available and otherwise copies the current URL (which carries `?year&month`) with a short "Copied" state. Event filters use labeled icon checkboxes; timezone and hemisphere controls live in the expandable Your sky section. Keep selected states understandable without color alone and all settings reachable by touch and keyboard. Learn closes on outside pointer/focus events; do not close it on blur alone, which can hide its buttons before a touch click is delivered.
 - Maintain the seven-column calendar at small widths, keyboard day selection, readable labels, and print behavior. Shared grid styling also affects calendar PDFs.
 - The calendar snapshot date range, noon time, and timezone are shown once above the displayed months. Day details show the full selected-day noon timestamp. Keep calendar date rows equal-height and Moon rows anchored at every container size, including when noon signs are off. The day modal masthead and details scroll together, with footer actions outside the scroll area.
 - Visible images currently use `/masthead_banner.jpg` and `/moon_engraving.jpg` from `public/`; similarly named files in `src/assets/images/` are not the current component references.

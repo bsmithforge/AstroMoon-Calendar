@@ -27,7 +27,9 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
-    "clean": "rm -rf dist server/dist"
+    "eval:ask": "node --import tsx scripts/eval-ask.ts",
+    "clean": "rm -rf dist server/dist",
+    "eval:themes": "node --import tsx scripts/eval-themes.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

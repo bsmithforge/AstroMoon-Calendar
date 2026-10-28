@@ -150,11 +150,72 @@ export function getMoonEclipticLongitude(date: Date): number {
   return normalizeDegrees(geo.lon);
 }
 
+export type MoonPhaseName =
+  | 'New Moon'
+  | 'Waxing Crescent'
+  | 'First Quarter'
+  | 'Waxing Gibbous'
+  | 'Full Moon'
+  | 'Waning Gibbous'
+  | 'Third Quarter'
+  | 'Waning Crescent';
+
+/** Traditional interpretation for each of the eight phase categories. */
+export const MOON_PHASE_MEANINGS: Record<MoonPhaseName, string> = {
+  'New Moon': 'New beginnings, intention setting, quiet contemplation, seed planting.',
+  'Waxing Crescent': 'Emergence, early momentum, nurturing commitments, fresh hope.',
+  'First Quarter': 'Decision-making, overcoming initial obstacles, commitment, action.',
+  'Waxing Gibbous': 'Refinement, adjustment, anticipation, patience before culmination.',
+  'Full Moon': 'Culmination, illumination, emotional clarity, celebration, harvesting.',
+  'Waning Gibbous': 'Gratitude, dissemination, sharing wisdom, emotional release.',
+  'Third Quarter': 'Forgiveness, conscious clearing, closure, letting go of what no longer serves.',
+  'Waning Crescent': 'Rest, surrender, restorative stillness, intuitive dreamwork, rejuvenation.',
+};
+
+/** Northern and southern emoji for each phase category (the lit side flips in the southern hemisphere). */
+const PHASE_EMOJI: Record<MoonPhaseName, { northern: string; southern: string }> = {
+  'New Moon': { northern: '🌑', southern: '🌑' },
+  'Waxing Crescent': { northern: '🌒', southern: '🌘' },
+  'First Quarter': { northern: '🌓', southern: '🌗' },
+  'Waxing Gibbous': { northern: '🌔', southern: '🌖' },
+  'Full Moon': { northern: '🌕', southern: '🌕' },
+  'Waning Gibbous': { northern: '🌖', southern: '🌔' },
+  'Third Quarter': { northern: '🌗', southern: '🌓' },
+  'Waning Crescent': { northern: '🌘', southern: '🌒' },
+};
+
+export function getPhaseEmoji(name: MoonPhaseName, hemisphere: Hemisphere): string {
+  return PHASE_EMOJI[name][hemisphere === 'southern' ? 'southern' : 'northern'];
+}
+
+type QuarterName = NonNullable<MoonPhaseInfo['quarterName']>;
+const QUARTER_NAMES: readonly MoonPhaseName[] = ['New Moon', 'First Quarter', 'Full Moon', 'Third Quarter'];
+
+function phaseInfoNamed(
+  name: MoonPhaseName,
+  phaseAngle: number,
+  fraction: number,
+  hemisphere: Hemisphere,
+  quarterName?: QuarterName
+): MoonPhaseInfo {
+  const { northern, southern } = PHASE_EMOJI[name];
+  return {
+    name,
+    emoji: hemisphere === 'southern' ? southern : northern,
+    southernEmoji: southern,
+    phaseAngle,
+    fraction,
+    isQuarter: quarterName !== undefined,
+    quarterName,
+    meaning: MOON_PHASE_MEANINGS[name],
+  };
+}
+
 /**
  * Get lunar phase information for any instant.
  * - phaseAngle in [0, 360)
  * - fraction: illuminated fraction in [0, 1]
- * - 8 distinct phase categories
+ * - 8 distinct phase categories; the four primary ones span ±6° of their exact angle
  */
 export function getMoonPhaseInfo(
   date: Date,
@@ -164,87 +225,44 @@ export function getMoonPhaseInfo(
   const illum = Astronomy.Illumination(Astronomy.Body.Moon, date);
   const fraction = illum.phase_fraction;
 
-  let name = '';
-  let emoji = '🌑';
-  let southernEmoji = '🌑';
-  let isQuarter = false;
-  let quarterName:
-    | 'New Moon'
-    | 'First Quarter'
-    | 'Full Moon'
-    | 'Third Quarter'
-    | undefined = undefined;
-  let meaning = '';
-
   // 8-phase categorization
-  if (phaseAngle >= 354 || phaseAngle < 6) {
-    name = 'New Moon';
-    emoji = '🌑';
-    southernEmoji = '🌑';
-    isQuarter = true;
-    quarterName = 'New Moon';
-    meaning =
-      'New beginnings, intention setting, quiet contemplation, seed planting.';
-  } else if (phaseAngle >= 6 && phaseAngle < 84) {
-    name = 'Waxing Crescent';
-    emoji = '🌒';
-    southernEmoji = '🌘';
-    meaning =
-      'Emergence, early momentum, nurturing commitments, fresh hope.';
-  } else if (phaseAngle >= 84 && phaseAngle < 96) {
-    name = 'First Quarter';
-    emoji = '🌓';
-    southernEmoji = '🌗';
-    isQuarter = true;
-    quarterName = 'First Quarter';
-    meaning =
-      'Decision-making, overcoming initial obstacles, commitment, action.';
-  } else if (phaseAngle >= 96 && phaseAngle < 174) {
-    name = 'Waxing Gibbous';
-    emoji = '🌔';
-    southernEmoji = '🌖';
-    meaning =
-      'Refinement, adjustment, anticipation, patience before culmination.';
-  } else if (phaseAngle >= 174 && phaseAngle < 186) {
-    name = 'Full Moon';
-    emoji = '🌕';
-    southernEmoji = '🌕';
-    isQuarter = true;
-    quarterName = 'Full Moon';
-    meaning =
-      'Culmination, illumination, emotional clarity, celebration, harvesting.';
-  } else if (phaseAngle >= 186 && phaseAngle < 264) {
-    name = 'Waning Gibbous';
-    emoji = '🌖';
-    southernEmoji = '🌔';
-    meaning =
-      'Gratitude, dissemination, sharing wisdom, emotional release.';
-  } else if (phaseAngle >= 264 && phaseAngle < 276) {
-    name = 'Third Quarter';
-    emoji = '🌗';
-    southernEmoji = '🌓';
-    isQuarter = true;
-    quarterName = 'Third Quarter';
-    meaning =
-      'Forgiveness, conscious clearing, closure, letting go of what no longer serves.';
-  } else {
-    name = 'Waning Crescent';
-    emoji = '🌘';
-    southernEmoji = '🌒';
-    meaning =
-      'Rest, surrender, restorative stillness, intuitive dreamwork, rejuvenation.';
-  }
+  let name: MoonPhaseName;
+  if (phaseAngle >= 354 || phaseAngle < 6) name = 'New Moon';
+  else if (phaseAngle < 84) name = 'Waxing Crescent';
+  else if (phaseAngle < 96) name = 'First Quarter';
+  else if (phaseAngle < 174) name = 'Waxing Gibbous';
+  else if (phaseAngle < 186) name = 'Full Moon';
+  else if (phaseAngle < 264) name = 'Waning Gibbous';
+  else if (phaseAngle < 276) name = 'Third Quarter';
+  else name = 'Waning Crescent';
 
-  return {
-    name,
-    emoji: hemisphere === 'southern' ? southernEmoji : emoji,
-    southernEmoji,
-    phaseAngle,
-    fraction,
-    isQuarter,
-    quarterName,
-    meaning,
-  };
+  const quarterName = QUARTER_NAMES.includes(name) ? (name as QuarterName) : undefined;
+  return phaseInfoNamed(name, phaseAngle, fraction, hemisphere, quarterName);
+}
+
+/**
+ * The phase for a calendar day. Illumination, angle, and the drawing stay the
+ * noon snapshot, but a primary phase name belongs to the day its exact moment
+ * falls on: that day takes the name even when noon is outside the ±6° window
+ * (an exact Full Moon at 01:12 would otherwise label its own day "Waning
+ * Gibbous"), and a neighbouring day whose noon falls inside the window takes
+ * the adjacent waxing or waning name. Each exact quarter names exactly one day.
+ */
+export function getDayPhaseInfo(
+  noonPhase: MoonPhaseInfo,
+  exactQuarter: QuarterName | undefined,
+  hemisphere: Hemisphere
+): MoonPhaseInfo {
+  const { phaseAngle, fraction } = noonPhase;
+  if (exactQuarter) return phaseInfoNamed(exactQuarter, phaseAngle, fraction, hemisphere, exactQuarter);
+  if (!noonPhase.isQuarter) return noonPhase;
+  // Noon is near a quarter whose exact moment is on another day: name the side of it.
+  const adjacent: MoonPhaseName =
+    noonPhase.name === 'New Moon' ? (phaseAngle >= 180 ? 'Waning Crescent' : 'Waxing Crescent')
+    : noonPhase.name === 'First Quarter' ? (phaseAngle < 90 ? 'Waxing Crescent' : 'Waxing Gibbous')
+    : noonPhase.name === 'Full Moon' ? (phaseAngle < 180 ? 'Waxing Gibbous' : 'Waning Gibbous')
+    : phaseAngle < 270 ? 'Waning Gibbous' : 'Waning Crescent';
+  return phaseInfoNamed(adjacent, phaseAngle, fraction, hemisphere);
 }
 
 /**
@@ -506,6 +524,40 @@ export function findIngressesInRange(
 }
 
 /**
+ * UTC search window for an inclusive local date range (YYYY-MM-DD):
+ * 00:00:00 local on the start date to 00:00:00 local on the day after the end date.
+ * Callers validate the dates first (see dateRange.ts).
+ */
+export function getLocalDateRangeUtc(
+  startDateStr: string,
+  endDateStr: string,
+  timeZone: string
+): { startUtc: Date; endUtc: Date } {
+  const [startYear, startMonth, startDay] = startDateStr.split('-').map((n) => parseInt(n, 10));
+  const [endYear, endMonth, endDay] = endDateStr.split('-').map((n) => parseInt(n, 10));
+
+  const startUtc = getUtcForLocalTime(startYear, startMonth, startDay, 0, 0, 0, timeZone);
+
+  // Day after last date: step from local noon so DST shifts can't skip or repeat a date
+  const endNoonUtc = getUtcForLocalTime(endYear, endMonth, endDay, 12, 0, 0, timeZone);
+  const nextDayLocal = getLocalDateComponents(
+    new Date(endNoonUtc.getTime() + 24 * 3600 * 1000),
+    timeZone
+  );
+  const endUtc = getUtcForLocalTime(
+    nextDayLocal.year,
+    nextDayLocal.month,
+    nextDayLocal.day,
+    0,
+    0,
+    0,
+    timeZone
+  );
+
+  return { startUtc, endUtc };
+}
+
+/**
  * Generates the unified structured astronomical dataset for a given inclusive
  * calendar date range (startDate to endDate, YYYY-MM-DD) in the specified timezone.
  *
@@ -549,36 +601,9 @@ export function generateRangeDataset(
       };
     }
 
-    // Interval: start of first date (00:00:00 local) to start of day after last date (00:00:00 local)
-    const rangeStartUtc = getUtcForLocalTime(
-      startYear,
-      startMonth,
-      startDay,
-      0,
-      0,
-      0,
-      timeZone
-    );
-
-    // Day after last date:
-    const tempEndUtc = getUtcForLocalTime(
-      endYear,
-      endMonth,
-      endDay,
-      12,
-      0,
-      0,
-      timeZone
-    );
-    const nextDayUtc = new Date(tempEndUtc.getTime() + 24 * 3600 * 1000);
-    const nextDayLocal = getLocalDateComponents(nextDayUtc, timeZone);
-    const rangeEndUtc = getUtcForLocalTime(
-      nextDayLocal.year,
-      nextDayLocal.month,
-      nextDayLocal.day,
-      0,
-      0,
-      0,
+    const { startUtc: rangeStartUtc, endUtc: rangeEndUtc } = getLocalDateRangeUtc(
+      startDateStr,
+      endDateStr,
       timeZone
     );
 
@@ -617,8 +642,16 @@ export function generateRangeDataset(
         timeZone
       );
 
-      // Daily noon phase & zodiac snapshot
-      const noonPhase = getMoonPhaseInfo(localNoonUtc, hemisphere);
+      const dayQuarters = quarterEvents.filter(
+        (e) => e.localDateString === dateString
+      );
+
+      // Daily noon phase & zodiac snapshot; the phase name follows the day's exact quarter, if any
+      const noonPhase = getDayPhaseInfo(
+        getMoonPhaseInfo(localNoonUtc, hemisphere),
+        dayQuarters[0]?.metadata.quarterType,
+        hemisphere
+      );
       const noonLon = getMoonEclipticLongitude(localNoonUtc);
       const noonZodiac = getZodiacSignFromLongitude(noonLon);
 
@@ -643,9 +676,6 @@ export function generateRangeDataset(
 
       // Find timed events falling on this local calendar date
       const dayIngresses = ingressEvents.filter(
-        (e) => e.localDateString === dateString
-      );
-      const dayQuarters = quarterEvents.filter(
         (e) => e.localDateString === dateString
       );
       const dayEclipses = eclipseEvents.filter(
@@ -721,6 +751,12 @@ export function generateRangeDataset(
  * Filter unified astronomical records according to user toggle settings.
  * Single source of truth for Calendar, Timeline, ICS, and PDF.
  */
+/** Whether the filters show an exact quarter of this type: all four, or only New and Full when an export asks. */
+export function includesQuarter(filters: FilterSettings, quarterType: string | undefined): boolean {
+  if (!filters.showFullNewMoon) return false;
+  return filters.quarterPhases !== 'newAndFull' || quarterType === 'New Moon' || quarterType === 'Full Moon';
+}
+
 export function filterAstroRecords(
   records: AstroRecord[],
   filters: FilterSettings
@@ -728,7 +764,7 @@ export function filterAstroRecords(
   return records.filter((rec) => {
     // 1. Quarters
     if (rec.eventType === 'quarter') {
-      return filters.showFullNewMoon;
+      return includesQuarter(filters, rec.metadata.quarterType);
     }
     // 2. Ingresses
     if (rec.eventType === 'ingress') {

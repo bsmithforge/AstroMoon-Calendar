@@ -1,5 +1,6 @@
 import React from 'react';
 import { AstroRecord, DayLunarData, FilterSettings } from '../types';
+import { includesQuarter } from '../utils/astronomy';
 import { MoonVisual } from './MoonVisual';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 
@@ -18,7 +19,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 }) => {
   // Filter records based on user's active filter settings
   const activeRecords = records.filter((rec) => {
-    if (rec.eventType === 'quarter') return filters.showFullNewMoon;
+    if (rec.eventType === 'quarter') return includesQuarter(filters, rec.metadata.quarterType);
     if (rec.eventType === 'ingress') return filters.showIngresses;
     if (rec.eventType === 'eclipse') return filters.showEclipses;
     if (rec.eventType === 'daily_summary') return filters.showDailySigns;

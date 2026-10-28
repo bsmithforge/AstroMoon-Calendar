@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Compass,
+  Feather,
   Globe,
 } from 'lucide-react';
 import { VERIFICATION_BENCHMARKS } from '../utils/validationData';
@@ -13,7 +14,7 @@ interface MethodologyModalProps {
   onClose: () => void;
 }
 
-type MethodologyTab = 'benchmarks' | 'coordinates' | 'timezones';
+type MethodologyTab = 'benchmarks' | 'coordinates' | 'timezones' | 'ai';
 
 interface BenchmarkRow {
   id: string;
@@ -169,20 +170,26 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
     {
       id: 'benchmarks',
       icon: <CheckCircle2 className="w-4 h-4 text-[#5F6D61]" />,
-      short: 'Benchmarks',
+      short: 'Accuracy',
       full: 'Independent Benchmarks (USNO & NASA)',
     },
     {
       id: 'coordinates',
       icon: <Compass className="w-4 h-4 text-[#B89A62]" />,
-      short: 'Coordinates',
+      short: 'Coords',
       full: 'Coordinate System & Conventions',
     },
     {
       id: 'timezones',
       icon: <Globe className="w-4 h-4 text-[#5F6D61]" />,
-      short: 'Timezones',
+      short: 'Zones',
       full: 'Timezones, DST & Edge Cases',
+    },
+    {
+      id: 'ai',
+      icon: <Feather className="w-4 h-4 text-[#B89A62]" />,
+      short: 'AI',
+      full: 'AI Answers',
     },
   ];
 
@@ -417,6 +424,72 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({
                     Events occurring near midnight correctly shift between adjacent calendar dates depending on your local longitude.
                   </p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'ai' && (
+            <div className="space-y-4 text-xs leading-relaxed">
+              <div className="p-4 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] space-y-2">
+                <h4 className="font-serif-almanac font-semibold text-sm text-[#182421] flex items-center gap-2">
+                  <Feather className="w-4 h-4 text-[#B89A62]" />
+                  <span>How AI answers are checked</span>
+                </h4>
+                <p className="text-[#182421]">
+                  Ask the Almanac uses a free-tier language model only to choose what to look up and to word the reply. Every date,
+                  time, sign, and phase in an answer comes from the same astronomy-engine calculations as the calendar.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] space-y-1.5">
+                  <span className="font-serif-almanac font-semibold text-[#182421] block">1. Tools, not memory</span>
+                  <p className="text-[#5F6D61]">
+                    The model can only call AstroMoon’s lookups: phases, sign changes, eclipses, the Moon on a date, traditional
+                    meanings, and export settings. Each request is validated before anything is calculated.
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] space-y-1.5">
+                  <span className="font-serif-almanac font-semibold text-[#182421] block">2. Cited, never typed</span>
+                  <p className="text-[#5F6D61]">
+                    Answers refer to events by ID. The server checks each one against what the lookups returned and rejects dates the
+                    model wrote itself; after one correction, it shows the results as a plain list instead.
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] space-y-1.5">
+                  <span className="font-serif-almanac font-semibold text-[#182421] block">3. Exports stay exact</span>
+                  <p className="text-[#5F6D61]">
+                    Asking for an export only fills in the export form for you to review. The files are built exactly as they would be
+                    from the same settings chosen by hand, with no AI-written text.
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-md bg-[#FAF6EE] border border-[#D8D0BF] space-y-1.5">
+                  <span className="font-serif-almanac font-semibold text-[#182421] block">4. Theme search on your device</span>
+                  <p className="text-[#5F6D61]">
+                    Theme search runs a small open-source model in your browser and matches your words against AstroMoon’s own
+                    traditional interpretations. Nothing you type there is sent anywhere.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-md bg-[#E4ECE5] border border-[#657367]/40 space-y-1.5 text-[#182421]">
+                <p>
+                  <strong>Tested:</strong> on a 20-question test set, both providers’ answers passed these checks 20 times out of 20,
+                  and theme search matched 16 of 16 sample queries.{' '}
+                  <a
+                    href="https://github.com/bsmithforge/AstroMoon-Calendar/blob/main/docs/ai-evals.md"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 underline decoration-[#657367]/60 underline-offset-2 hover:text-[#B44732]"
+                  >
+                    Evaluation details <ExternalLink className="w-3 h-3" />
+                  </a>
+                </p>
+                <p>
+                  <strong>Privacy:</strong> Ask sends your question to Groq, which doesn’t train on it, or outside the EEA, UK, and
+                  Switzerland to Google Gemini as a backup, whose free tier may use it to improve Google’s products. Please don’t
+                  include personal information.
+                </p>
               </div>
             </div>
           )}
