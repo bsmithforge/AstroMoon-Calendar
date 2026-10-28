@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useDeferredValue } from 'react';
 import {
   Calendar as CalendarIcon,
   FileText,
@@ -144,19 +144,31 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
     ]
   );
 
-  const [startYear, startMonth] = startDate.split('-').map(Number);
-  const monthCount = countMonthsSpanned(startDate, endDate);
   const rangeError = getDateRangeError(startDate, endDate);
   const calendarError = getCalendarPdfRangeError(startDate, endDate);
   const recordRangeError = getRecordExportRangeError(startDate, endDate);
 
+  // Building and rendering the off-screen capture grids is the slow part of the
+  // dialog: a year is twelve months of synchronous astronomy plus twelve grids.
+  // Defer it so the dialog paints first after a tap (and after each date or
+  // toggle edit); the calendar PDF button waits until the grids catch up.
+  const captureFilters = useDeferredValue<FilterSettings | null>(exportFilters, null);
+  const capturePending = captureFilters !== exportFilters;
+  // Grids depend only on the dates (toggles re-render them without recalculating).
+  const captureReady = captureFilters !== null;
+  const captureStart = captureFilters?.startDate ?? '';
+  const captureEnd = captureFilters?.endDate ?? '';
+
   // Validate before computing grids, including partially edited date fields.
   const { exportMonths, calculationError } = useMemo(() => {
-    if (calendarError) return { exportMonths: [], calculationError: null };
+    if (!captureReady || getCalendarPdfRangeError(captureStart, captureEnd)) {
+      return { exportMonths: [], calculationError: null };
+    }
+    const [captureYear, captureMonth] = captureStart.split('-').map(Number);
     try {
-      const months = Array.from({ length: monthCount }, (_, index) => {
-        const offset = startMonth - 1 + index;
-        const year = startYear + Math.floor(offset / 12);
+      const months = Array.from({ length: countMonthsSpanned(captureStart, captureEnd) }, (_, index) => {
+        const offset = captureMonth - 1 + index;
+        const year = captureYear + Math.floor(offset / 12);
         const month = offset % 12;
         return {
           key: `${year}-${month}`,
@@ -168,7 +180,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
     } catch {
       return { exportMonths: [], calculationError: 'Unable to calculate this calendar. Try another date range or timezone.' };
     }
-  }, [calendarError, monthCount, startYear, startMonth, hemisphere, timezone]);
+  }, [captureReady, captureStart, captureEnd, hemisphere, timezone]);
 
   // The draft's format is emphasized, not chosen: the user still taps to download,
   // which also keeps iOS's requirement that downloads start from a user gesture.
@@ -314,7 +326,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
   };
 
   const handleDownloadPdf = async () => {
-    if (busyRef.current || (pdfMode === 'calendar' ? calendarError || calculationError : recordRangeError)) return;
+    if (busyRef.current || (pdfMode === 'calendar' ? calendarError || calculationError || capturePending : recordRangeError)) return;
     busyRef.current = true;
     setDownloadSuccess(null);
     setIsExporting(true);
@@ -640,7 +652,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
             <button
               id="export-pdf-action-btn"
               onClick={handleDownloadPdf}
-              disabled={isExporting || !!(pdfMode === 'calendar' ? calendarError || calculationError : recordRangeError)}
+              disabled={isExporting || !!(pdfMode === 'calendar' ? calendarError || calculationError || capturePending : recordRangeError)}
               className={`p-4 rounded-md bg-[#FAF6EE] border border-[#182421]/30 hover:border-[#182421] text-left transition flex flex-col justify-between group shadow-xs hover:bg-[#FFFDF9] disabled:opacity-60 disabled:cursor-wait disabled:hover:border-[#182421]/30 ${suggestPdf ? suggestedRing : ''}`}
             >
               <div>
@@ -662,7 +674,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                 </p>
               </div>
               <span className="text-xs text-[#182421] font-semibold mt-4 flex items-center gap-1">
-                {isExporting ? 'Generating PDF…' : 'Download PDF File →'}
+                {isExporting ? 'Generating PDF…' : pdfMode === 'calendar' && capturePending && !calendarError ? 'Preparing calendar…' : 'Download PDF File →'}
               </span>
             </button>
           </div>
@@ -714,7 +726,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
             </p>
             <CalendarGrid
               days={mo.days}
-              filters={exportFilters}
+              filters={captureFilters ?? exportFilters}
               onSelectDay={() => {}}
               forExport
             />
