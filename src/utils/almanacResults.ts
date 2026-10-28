@@ -36,6 +36,18 @@ export type ModelToolResult =
       events: ModelRecord[];
     }
   | { ok: true; interpretations: Interpretation[] }
+  | {
+      ok: true;
+      export_draft: {
+        format: string;
+        start_date: string;
+        end_date: string;
+        timezone: string;
+        hemisphere: string;
+        include: string[];
+      };
+      note: string;
+    }
   | { ok: false; error: string };
 
 export interface EventView {
@@ -85,6 +97,26 @@ export function toModelRecord(record: AstroRecord): ModelRecord {
 export function toModelResult(result: AlmanacToolResult): ModelToolResult {
   if ('error' in result) return { ok: false, error: result.error };
   if ('interpretations' in result) return { ok: true, interpretations: result.interpretations };
+  if ('draft' in result) {
+    const { draft } = result;
+    return {
+      ok: true,
+      export_draft: {
+        format: draft.format,
+        start_date: draft.startDate,
+        end_date: draft.endDate,
+        timezone: draft.timezone,
+        hemisphere: draft.hemisphere,
+        include: [
+          draft.includeMajorPhases && 'moon_phases',
+          draft.includeIngresses && 'sign_changes',
+          draft.includeDailySigns && 'noon_signs',
+          draft.includeEclipses && 'eclipses',
+        ].filter((name): name is string => !!name),
+      },
+      note: 'The app shows these settings with a Review export button; the user downloads from the export dialog.',
+    };
+  }
   return {
     ok: true,
     timezone: result.timezone,

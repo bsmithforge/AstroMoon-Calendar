@@ -76,7 +76,7 @@ test('a grounded answer returns segments, cited engine events, and a trace', asy
   ]);
 
   const [first] = requests;
-  assert.equal(first.tools.length, 5);
+  assert.equal(first.tools.length, ALMANAC_TOOL_SCHEMAS.length);
   assert.match(first.messages[0].content as string, /Today is 2026-10-27 in the user's timezone, UTC/);
   assert.deepEqual(first.messages[1], { role: 'user', content: input.question });
   assert.deepEqual(toolResults(requests[1])[0].events[0].id, FULL_MOON);

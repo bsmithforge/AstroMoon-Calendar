@@ -19,7 +19,8 @@ import {
   MOON_PHASE_MEANINGS,
   MoonPhaseName,
 } from './astronomy';
-import { countInclusiveDays, getDateRangeError, isValidIsoDate, RECORD_EXPORT_MAX_DAYS } from './dateRange';
+import { CALENDAR_PDF_MAX_MONTHS, countInclusiveDays, getDateRangeError, isValidIsoDate, RECORD_EXPORT_MAX_DAYS } from './dateRange';
+import { EXPORT_FORMATS, ExportDraft, getExportDraftError } from './exportDraft';
 import { isValidTimeZone } from './subscription';
 import { ZODIAC_SIGNS } from './zodiac';
 
@@ -36,6 +37,9 @@ const QUARTER_NAMES = ['New Moon', 'First Quarter', 'Full Moon', 'Third Quarter'
 const ECLIPSE_TYPES = ['solar', 'lunar'] as const;
 const ECLIPSE_KINDS = ['total', 'partial', 'annular', 'penumbral'] as const;
 const ORDERS = ['earliest', 'latest'] as const;
+const HEMISPHERES = ['northern', 'southern'] as const;
+/** Export event types, named as in the app's filters. */
+const EXPORT_EVENTS = ['moon_phases', 'sign_changes', 'noon_signs', 'eclipses'] as const;
 const SIGN_NAMES = ZODIAC_SIGNS.map((sign) => sign.name);
 const PHASE_NAMES = Object.keys(MOON_PHASE_MEANINGS) as MoonPhaseName[];
 
@@ -44,7 +48,8 @@ export type AlmanacToolName =
   | 'find_sign_ingresses'
   | 'find_eclipses'
   | 'get_moon_on_date'
-  | 'get_traditional_meaning';
+  | 'get_traditional_meaning'
+  | 'prepare_export';
 
 /** The user's settings, which tools fall back to when arguments are omitted. */
 export interface AlmanacContext {
@@ -93,9 +98,17 @@ export interface AlmanacInterpretationResult {
   interpretations: Interpretation[];
 }
 
+/** Export settings for the user to review in the export dialog. Never a file. */
+export interface AlmanacExportResult {
+  ok: true;
+  tool: 'prepare_export';
+  draft: ExportDraft;
+}
+
 export type AlmanacToolResult =
   | AlmanacRecordsResult
   | AlmanacInterpretationResult
+  | AlmanacExportResult
   | { ok: false; tool: string; error: string };
 
 const rangeParameters = {
@@ -201,6 +214,44 @@ export const ALMANAC_TOOL_SCHEMAS: AlmanacToolSchema[] = [
         sign: { type: 'string', enum: SIGN_NAMES, description: 'Tropical zodiac sign.' },
         phase: { type: 'string', enum: PHASE_NAMES, description: 'One of the eight Moon phase categories.' },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'prepare_export',
+    description:
+      'Prepare export settings when the user wants to download or print a calendar. The app opens its export dialog prefilled with them for the user to review and download; this tool never creates a file. Give the range as start_date and end_date, as a year, or as a month (optionally with months).',
+    parameters: {
+      type: 'object',
+      properties: {
+        format: {
+          type: 'string',
+          enum: EXPORT_FORMATS,
+          description: `'ics' for a calendar-app file, 'calendar_pdf' for printable month grids (whole months, at most ${CALENDAR_PDF_MAX_MONTHS}), 'table_pdf' for a printable list of events. ICS and table exports cover at most ${RECORD_EXPORT_MAX_DAYS} days.`,
+        },
+        start_date: { type: 'string', description: 'First local date, YYYY-MM-DD.' },
+        end_date: { type: 'string', description: 'Last local date (inclusive), YYYY-MM-DD.' },
+        year: { type: 'integer', description: 'A whole calendar year, instead of start_date and end_date.' },
+        month: { type: 'string', description: 'A whole month, YYYY-MM, instead of start_date and end_date.' },
+        months: {
+          type: 'integer',
+          minimum: 1,
+          maximum: CALENDAR_PDF_MAX_MONTHS,
+          description: 'With month: how many consecutive whole months, starting with that month. Defaults to 1.',
+        },
+        include: {
+          type: 'array',
+          items: { type: 'string', enum: EXPORT_EVENTS },
+          description: "Event types to include: 'moon_phases' (New, First Quarter, Full, Third Quarter), 'sign_changes' (Moon entering a sign), 'noon_signs' (daily sign and phase at noon), 'eclipses'. Defaults to all four.",
+        },
+        timezone: rangeParameters.timezone,
+        hemisphere: {
+          type: 'string',
+          enum: HEMISPHERES,
+          description: "Moon orientation in the export. Defaults to the user's hemisphere.",
+        },
+      },
+      required: ['format'],
       additionalProperties: false,
     },
   },
@@ -418,7 +469,68 @@ const TOOLS: Record<AlmanacToolName, (args: Args, ctx: AlmanacContext) => Almana
     }
     return { ok: true, tool: 'get_traditional_meaning', interpretations };
   },
+
+  prepare_export(args, ctx) {
+    const format = optionalChoice(args, 'format', EXPORT_FORMATS);
+    if (!format) throw new ToolArgumentError(`format is required: one of ${EXPORT_FORMATS.join(', ')}.`);
+    const { startDate, endDate } = resolveExportRange(args);
+    const include = optionalChoiceList(args, 'include', EXPORT_EVENTS) ?? EXPORT_EVENTS;
+    const draft: ExportDraft = {
+      format,
+      startDate,
+      endDate,
+      timezone: resolveTimezone(args, ctx),
+      hemisphere: optionalChoice(args, 'hemisphere', HEMISPHERES) ?? ctx.hemisphere,
+      includeMajorPhases: include.includes('moon_phases'),
+      includeIngresses: include.includes('sign_changes'),
+      includeDailySigns: include.includes('noon_signs'),
+      includeEclipses: include.includes('eclipses'),
+    };
+    const error = getExportDraftError(draft);
+    if (error) throw new ToolArgumentError(error);
+    return { ok: true, tool: 'prepare_export', draft };
+  },
 };
+
+function optionalInteger(args: Args, key: string, min: number, max: number): number | undefined {
+  const value = args[key];
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
+    throw new ToolArgumentError(`${key} must be a whole number from ${min} to ${max}.`);
+  }
+  return value;
+}
+
+/** Exactly one of: start_date and end_date, year, or month (with optional months). */
+function resolveExportRange(args: Args): { startDate: string; endDate: string } {
+  const year = optionalInteger(args, 'year', ALMANAC_MIN_YEAR, ALMANAC_MAX_YEAR);
+  const month = optionalString(args, 'month');
+  const months = optionalInteger(args, 'months', 1, CALENDAR_PDF_MAX_MONTHS);
+  const hasDates = args.start_date !== undefined || args.end_date !== undefined;
+  const forms = [hasDates, year !== undefined, month !== undefined].filter(Boolean).length;
+  if (forms !== 1) {
+    throw new ToolArgumentError('Give the range one way: start_date and end_date, a year, or a month (with optional months).');
+  }
+  if (months !== undefined && month === undefined) throw new ToolArgumentError('months goes with month.');
+
+  if (year !== undefined) return { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
+  if (month !== undefined) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new ToolArgumentError('month must be YYYY-MM.');
+    const startDate = `${month}-01`;
+    checkYearBounds(startDate, 'month');
+    const [y, m] = month.split('-').map(Number);
+    // Day 0 of the month after the last one is that month's last day.
+    const endDate = new Date(Date.UTC(y, m - 1 + (months ?? 1), 0)).toISOString().slice(0, 10);
+    checkYearBounds(endDate, 'month');
+    return { startDate, endDate };
+  }
+  if (args.start_date === undefined || args.end_date === undefined) {
+    throw new ToolArgumentError('Give both start_date and end_date.');
+  }
+  const startDate = resolveDate(args, 'start_date', '');
+  const endDate = resolveDate(args, 'end_date', '');
+  return { startDate, endDate };
+}
 
 export function isAlmanacToolName(name: string): name is AlmanacToolName {
   return Object.prototype.hasOwnProperty.call(TOOLS, name);

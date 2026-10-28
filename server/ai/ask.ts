@@ -15,6 +15,7 @@ import { Hemisphere } from '../../src/types';
 import { EventView, toEventView, toModelResult } from '../../src/utils/almanacResults';
 import { ALMANAC_TOOL_SCHEMAS, AlmanacContext, runAlmanacTool } from '../../src/utils/almanacTools';
 import { getLocalDateComponents } from '../../src/utils/astronomy';
+import { EXPORT_FORMAT_LABELS } from '../../src/utils/exportDraft';
 import type { AnswerSegment, AskResult, TraceEntry } from '../../src/utils/askClient';
 import { buildCorrectionMessage, buildSystemPrompt } from './prompt';
 import { ChatMessage, ChatModel, ChatTool, ProviderError, ToolCall } from './provider';
@@ -119,6 +120,10 @@ export function checkGrounding(answer: string, known: Map<string, EventView>, qu
 function describeResult(result: ReturnType<typeof runAlmanacTool>): string {
   if ('error' in result) return result.error;
   if ('interpretations' in result) return result.interpretations.map((i) => i.name).join(', ');
+  if ('draft' in result) {
+    const { draft } = result;
+    return `${EXPORT_FORMAT_LABELS[draft.format]} · ${draft.startDate} to ${draft.endDate} · ${draft.timezone}`;
+  }
   const range = result.startDate === result.endDate ? result.startDate : `${result.startDate} to ${result.endDate}`;
   const count = result.truncated ? `${result.total} found, ${result.records.length} returned` : `${result.total} found`;
   return `${range} · ${result.timezone} · ${count}`;
