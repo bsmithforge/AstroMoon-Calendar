@@ -306,11 +306,21 @@ Added after Phase 6. The Ask dialog had become mostly chrome: a masthead, a tab 
    - keys are never `VITE_`-prefixed
 
    Update `CONTRIBUTING.md`, which should still say no key is needed.
-2. `Update methodology and static content`. Add a section on AI answers to the methodology modal, and update the static content and SEO metadata in `index.html`.
-3. **Final production pass (not a commit):** the production key and WAF rule go in before Release 2. At this point, confirm that:
-   - the provider accounts still have no billing attached
-   - the WAF rule is active
-   - every feature works on production, on real devices
+2. `Update methodology and static content`. Add an AI tab to the methodology modal: how answers are checked, the eval results, and what each provider does with questions. Update the static content, SEO metadata and FAQ in `index.html` and the in-app guide.
+3. Also in this phase: `Let traditional meanings read in the almanac's voice`. The Phase 3 prompt made every meaning carry "not a prediction or fact"; the app already labels interpretations as traditional.
+4. **Final production pass (not a commit, done by the owner).** Do this before Ask goes live on `main`:
+   - **Vercel → Settings → Environment Variables, Production:**
+     - `AI_BASE_URL`, `AI_MODEL` and `AI_API_KEY` for Groq
+     - `AI_FALLBACK_*` for Gemini
+     - `AI_FALLBACK_EXCLUDED_COUNTRIES` with the list in `.env.example`
+   - **Vercel → Firewall:** add one rate-limit rule on `/api/ask`. Hobby allows one, for example 10 requests a minute per IP.
+   - **Groq console:** turn on Zero Data Retention. Confirm that neither Groq nor Google AI Studio has billing attached.
+   - **After the release deploys, on real iOS Safari and Android Chrome:**
+     - Ask: an answer, an event that opens its day, an export request through Review export to a downloaded file
+     - theme search: the first search downloads, then shows results
+     - the resting state, when the quota runs out
+
+All phases were merged into `dev` and tested together there. Release them to `main` in one release PR; the planned per-phase releases were folded together.
 
 ## Risks
 
@@ -334,6 +344,7 @@ Added after Phase 6. The Ask dialog had become mostly chrome: a masthead, a tab 
 | 2026-10-27 | Phase branches merge into `dev`, and `dev` reaches `main` through release PRs. | Merged phases are tested together on a stable preview, with a live key and on real devices, before production. |
 | 2026-10-27 | Add a `get_traditional_meaning` tool. | Without it, questions about meanings would be answered from the model's general knowledge instead of the app's own copy. |
 | 2026-10-27 | Allow years and month names in answers only when the user typed them. | Restating the user's "2027" is harmless, but a model-written year or month can be wrong, so it fails the grounding check. |
+| 2026-10-28 | Release phases 0–7 to `main` in one release PR. | Every phase reached `dev` before any release, and they were tested together there; separate releases would ship the same code in pieces. |
 | 2026-10-28 | Load transformers.js from jsDelivr at an exact version (`@4.3.1/+esm`), not from npm. | The npm package adds ~480 MB of native Node binaries (`onnxruntime-node`, `sharp`) to every install, and the browser never uses them. The browser build fetches its WebAssembly runtime from jsDelivr anyway, so this adds no new host. |
 | 2026-10-28 | Run the theme model in a Web Worker. | Embedding the corpus takes ~2 s on desktop and longer on phones; on the main thread it would block taps (an INP problem). |
 | 2026-10-28 | Primary: Groq `openai/gpt-oss-120b`. Fallback: Gemini `gemini-3.5-flash-lite`, never used for requests from the EEA, UK or Switzerland or from an unknown country. | Both passed grounding on 20/20 eval answers. Groq doesn't train on prompts and has no regional restriction. Gemini's free tier may use prompts to improve its products and may not be offered in those regions. See [ai-evals.md](ai-evals.md). |
