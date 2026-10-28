@@ -59,6 +59,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
   const [question, setQuestion] = useState('');
   const [pending, setPending] = useState<string | null>(null);
   const [exchange, setExchange] = useState<AskExchange | null>(lastExchange);
+  const visibleArea = useVisibleArea();
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const requestRef = useRef<AbortController | null>(null);
@@ -148,6 +149,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
   return (
     <div
       id="ask-modal-overlay"
+      style={visibleArea ? { top: visibleArea.top, height: visibleArea.height, bottom: 'auto' } : undefined}
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-[#182421]/80 backdrop-blur-sm animate-fade-in"
       onClick={onClose}
     >
@@ -159,7 +161,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
         aria-modal="true"
         aria-labelledby="ask-modal-title"
         onClick={(event) => event.stopPropagation()}
-        className="flex h-full max-h-[min(44rem,calc(100dvh-1rem-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] w-full min-w-0 max-w-xl flex-col overflow-hidden rounded-lg border border-[#D8D0BF] bg-[#FAF7F0] text-[#182421] shadow-2xl font-sans-almanac animate-fade-in sm:h-auto"
+        className="flex h-full max-h-[min(44rem,100%)] w-full min-w-0 max-w-xl flex-col overflow-hidden rounded-lg border border-[#D8D0BF] bg-[#FAF7F0] text-[#182421] shadow-2xl font-sans-almanac animate-fade-in sm:h-auto"
       >
         <div className="relative flex shrink-0 items-center justify-between gap-3 border-b border-[#B89A62]/40 bg-[#182421] px-4 py-3 text-[#F3EDDF] sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -171,7 +173,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
                 Ask the Almanac
               </h3>
               <p className="mt-0.5 text-xs text-[#D8D0BF]">
-                AI answers, with every date from AstroMoon’s calculations
+                AI answers, dated by the almanac
               </p>
             </div>
           </div>
@@ -187,8 +189,9 @@ const AskModalContent: React.FC<AskModalProps> = ({
         </div>
 
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6">
-          <div className="space-y-5">
-            <div aria-live="polite" aria-busy={!!pending} className="space-y-5">
+          <div>
+            {/* Always mounted so screen readers announce answers; spaced only once it has one. */}
+            <div aria-live="polite" aria-busy={!!pending} className={pending || exchange ? 'mb-5' : undefined}>
               {pending ? (
                 <div className="space-y-3">
                   <QuestionHeading question={pending} />
@@ -229,7 +232,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
               </div>
             )}
 
-            <p className="flex gap-2 border-t border-[#D8D0BF] pt-4 text-[11px] leading-relaxed text-[#5F6D61]">
+            <p className="mt-5 flex gap-2 border-t border-[#D8D0BF] pt-4 text-[11px] leading-relaxed text-[#5F6D61]">
               <ShieldCheck size={14} className="mt-0.5 shrink-0 text-[#B89A62]" />
               <span>
                 {/* Providers and their data terms: docs/ai-evals.md */}
@@ -249,7 +252,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
               value={question}
               maxLength={ASK_QUESTION_MAX_LENGTH}
               enterKeyHint="send"
-              placeholder="Ask about phases, signs, or eclipses…"
+              placeholder="Ask about the Moon…"
               onChange={(event) => setQuestion(event.target.value)}
               onKeyDown={handleInputKeyDown}
               className="max-h-32 min-h-11 w-full min-w-0 flex-1 resize-none rounded-md border border-[#D8D0BF] bg-[#FFFDF9] px-3 py-2.5 text-base leading-snug text-[#182421] placeholder:text-[#7A857C] focus:border-[#182421] focus:outline-none sm:text-sm"
@@ -275,6 +278,32 @@ const AskModalContent: React.FC<AskModalProps> = ({
     </div>
   );
 };
+
+/**
+ * The part of the layout viewport that is actually visible, while it is
+ * smaller than the window. Phone keyboards (iOS Safari, Android Chrome)
+ * shrink only the visual viewport, which would leave the dialog's input
+ * under the keyboard; sizing the overlay to this keeps it in view.
+ */
+function useVisibleArea(): { top: number; height: number } | null {
+  const [area, setArea] = useState<{ top: number; height: number } | null>(null);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => {
+      const covered = window.innerHeight - viewport.height > 1;
+      setArea(covered ? { top: viewport.offsetTop, height: viewport.height } : null);
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+    };
+  }, []);
+  return area;
+}
 
 const QuestionHeading: React.FC<{ question: string }> = ({ question }) => (
   <p className="border-l-2 border-[#B89A62] pl-3 font-serif-almanac text-lg leading-snug text-[#182421] break-words">
@@ -302,19 +331,27 @@ const Answer: React.FC<{ result: AskResult; onOpenEvent: (event: EventView) => v
   );
 };
 
+// A link rather than a button: buttons render as inline blocks, so a long chip
+// would take a whole line instead of wrapping with the sentence. The href is
+// the event's month, so opening it in a new tab still lands somewhere useful.
 const EventChip: React.FC<{ event: EventView; onOpen: (event: EventView) => void }> = ({ event, onOpen }) => {
   const title = describeEventTitle(event);
   const time = describeEventTime(event);
+  const [year, month] = event.localDateString.split('-').map(Number);
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(event)}
+    <a
+      href={`?year=${year}&month=${month}`}
+      onClick={(clickEvent) => {
+        if (clickEvent.button !== 0 || clickEvent.metaKey || clickEvent.ctrlKey || clickEvent.shiftKey || clickEvent.altKey) return;
+        clickEvent.preventDefault();
+        onOpen(event);
+      }}
       aria-label={`${title}, ${time}. Open this day`}
-      className="mx-0.5 inline rounded-sm border border-[#B89A62]/70 bg-[#F6EFE0] px-1.5 py-1 text-left align-baseline text-[13px] leading-6 text-[#182421] box-decoration-clone transition hover:border-[#B44732] hover:bg-[#FFFDF9]"
+      className="rounded-sm border border-[#B89A62]/70 bg-[#F6EFE0] px-1 py-0.5 text-[13px] text-[#182421] no-underline box-decoration-clone transition hover:border-[#B44732] hover:bg-[#FFFDF9]"
     >
       <span className="font-semibold">{title}</span>
       <span className="text-[#5F6D61]"> · {time}</span>
-    </button>
+    </a>
   );
 };
 
