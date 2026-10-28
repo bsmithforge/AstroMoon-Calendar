@@ -22,7 +22,7 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 
 There is no formatter configuration. `.github/workflows/ci.yml` runs lint, test, and build on pushes to `main` and `dev` and on pull requests. A successful Vite build does not replace the separate type check.
 
-The app needs no API keys or `.env` file to run; without `AI_*` settings, `/api/ask` answers 503 `not_configured` and nothing else changes. Never prefix provider settings with `VITE_`, which would inline them into the client bundle. The `@/` alias resolves to the repository root, not `src/`.
+The app needs no API keys or `.env` file to run; without `AI_*` settings, `/api/ask` answers 503 `not_configured` and nothing else changes. Never prefix provider settings with `VITE_`, which would inline them into the client bundle. The chosen providers (Groq primary, Gemini fallback) and their eval results and data terms are in `docs/ai-evals.md`. `AI_FALLBACK_EXCLUDED_COUNTRIES` keeps the Gemini free tier away from the EEA, UK, and Switzerland as its terms require; it fails closed when Vercel's country header is missing, so the fallback is skipped under `npm run dev`. The `@/` alias resolves to the repository root, not `src/`.
 
 ## Hosting and GitHub workflow
 
