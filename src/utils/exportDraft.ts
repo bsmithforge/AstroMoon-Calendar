@@ -7,7 +7,7 @@
  * came from a draft or were entered by hand.
  */
 
-import { AstroRecord, FilterSettings, Hemisphere } from '../types';
+import { AstroRecord, FilterSettings, Hemisphere, QuarterPhaseSelection } from '../types';
 import { filterAstroRecords, generateRangeDataset } from './astronomy';
 import { getCalendarPdfRangeError, getDateRangeError, getRecordExportRangeError } from './dateRange';
 
@@ -26,8 +26,10 @@ export interface ExportSettings {
   endDate: string;
   timezone: string;
   hemisphere: Hemisphere;
-  /** All four primary quarters, as in the shared filter. */
+  /** Exact primary phases, as in the shared filter... */
   includeMajorPhases: boolean;
+  /** ...all four, or only New and Full Moons. */
+  quarterPhases: QuarterPhaseSelection;
   includeIngresses: boolean;
   includeDailySigns: boolean;
   includeEclipses: boolean;
@@ -43,6 +45,11 @@ export const EXPORT_EVENT_LABELS: [keyof ExportSettings, string][] = [
   ['includeDailySigns', 'Noon signs'],
   ['includeEclipses', 'Eclipses'],
 ];
+
+/** How the phase setting reads in summaries: all four phases, or only New and Full. */
+export function phaseLabel(settings: ExportSettings): string {
+  return settings.quarterPhases === 'newAndFull' ? 'New & Full Moons' : 'Moon phases';
+}
 
 export function hasIncludedEvents(settings: ExportSettings): boolean {
   return settings.includeMajorPhases || settings.includeIngresses || settings.includeDailySigns || settings.includeEclipses;
@@ -74,7 +81,9 @@ export function describeExportRange(settings: ExportSettings): string {
 
 /** "Moon phases, Eclipses", or null when no event type is included. */
 export function describeExportEvents(settings: ExportSettings): string | null {
-  const names = EXPORT_EVENT_LABELS.filter(([key]) => settings[key]).map(([, label]) => label);
+  const names = EXPORT_EVENT_LABELS.filter(([key]) => settings[key]).map(([key, label]) =>
+    key === 'includeMajorPhases' ? phaseLabel(settings) : label
+  );
   return names.length > 0 ? names.join(', ') : null;
 }
 
@@ -85,6 +94,7 @@ export function toExportFilters(settings: ExportSettings): FilterSettings {
     timezone: settings.timezone,
     hemisphere: settings.hemisphere,
     showFullNewMoon: settings.includeMajorPhases,
+    quarterPhases: settings.quarterPhases,
     showIngresses: settings.includeIngresses,
     showDailySigns: settings.includeDailySigns,
     showEclipses: settings.includeEclipses,

@@ -108,7 +108,7 @@ export function toModelResult(result: AlmanacToolResult): ModelToolResult {
         timezone: draft.timezone,
         hemisphere: draft.hemisphere,
         include: [
-          draft.includeMajorPhases && 'moon_phases',
+          draft.includeMajorPhases && (draft.quarterPhases === 'newAndFull' ? 'new_and_full_moons' : 'moon_phases'),
           draft.includeIngresses && 'sign_changes',
           draft.includeDailySigns && 'noon_signs',
           draft.includeEclipses && 'eclipses',

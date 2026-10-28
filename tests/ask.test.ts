@@ -102,6 +102,7 @@ test('an export request returns the validated draft alongside the answer', async
     timezone: 'UTC',
     hemisphere: 'northern',
     includeMajorPhases: true,
+    quarterPhases: 'all',
     includeIngresses: false,
     includeDailySigns: false,
     includeEclipses: false,

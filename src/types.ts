@@ -97,12 +97,16 @@ export interface DayLunarData {
 
 export type CalendarViewMode = 'month' | 'threeMonths' | 'year';
 
+export type QuarterPhaseSelection = 'all' | 'newAndFull';
+
 export interface FilterSettings {
   startDate?: string; // YYYY-MM-DD
   endDate?: string; // YYYY-MM-DD
   rangePreset?: CalendarViewMode;
   hemisphere: Hemisphere;
   showFullNewMoon: boolean; // Exact primary phases
+  /** Which exact phases showFullNewMoon includes. Only exports set it; defaults to all four. */
+  quarterPhases?: QuarterPhaseSelection;
   showIngresses: boolean; // Exact zodiac sign transitions
   showDailySigns: boolean; // Noon daily sign snapshot
   showEclipses: boolean; // Solar & Lunar eclipses

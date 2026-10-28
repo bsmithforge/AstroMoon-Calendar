@@ -39,7 +39,8 @@ const ECLIPSE_KINDS = ['total', 'partial', 'annular', 'penumbral'] as const;
 const ORDERS = ['earliest', 'latest'] as const;
 const HEMISPHERES = ['northern', 'southern'] as const;
 /** Export event types, named as in the app's filters. */
-const EXPORT_EVENTS = ['moon_phases', 'sign_changes', 'noon_signs', 'eclipses'] as const;
+const EXPORT_EVENTS = ['moon_phases', 'new_and_full_moons', 'sign_changes', 'noon_signs', 'eclipses'] as const;
+const DEFAULT_EXPORT_EVENTS: readonly (typeof EXPORT_EVENTS)[number][] = ['moon_phases', 'sign_changes', 'noon_signs', 'eclipses'];
 const SIGN_NAMES = ZODIAC_SIGNS.map((sign) => sign.name);
 const PHASE_NAMES = Object.keys(MOON_PHASE_MEANINGS) as MoonPhaseName[];
 
@@ -242,7 +243,7 @@ export const ALMANAC_TOOL_SCHEMAS: AlmanacToolSchema[] = [
         include: {
           type: 'array',
           items: { type: 'string', enum: EXPORT_EVENTS },
-          description: "Event types to include: 'moon_phases' (always all four: New, First Quarter, Full, Third Quarter; exports can't include only some of them, so say so if the user asked for fewer), 'sign_changes' (Moon entering a sign), 'noon_signs' (daily sign and phase at noon), 'eclipses'. Defaults to all four types.",
+          description: "Event types to include: 'moon_phases' (all four exact phases: New, First Quarter, Full, Third Quarter), 'new_and_full_moons' (only exact New and Full Moons; use instead of moon_phases when the user asks for just those), 'sign_changes' (Moon entering a sign), 'noon_signs' (daily sign and phase at noon), 'eclipses'. Defaults to moon_phases, sign_changes, noon_signs, and eclipses.",
         },
         timezone: rangeParameters.timezone,
         hemisphere: {
@@ -474,14 +475,17 @@ const TOOLS: Record<AlmanacToolName, (args: Args, ctx: AlmanacContext) => Almana
     const format = optionalChoice(args, 'format', EXPORT_FORMATS);
     if (!format) throw new ToolArgumentError(`format is required: one of ${EXPORT_FORMATS.join(', ')}.`);
     const { startDate, endDate } = resolveExportRange(args);
-    const include = optionalChoiceList(args, 'include', EXPORT_EVENTS) ?? EXPORT_EVENTS;
+    const include = optionalChoiceList(args, 'include', EXPORT_EVENTS) ?? DEFAULT_EXPORT_EVENTS;
+    // All four phases win if both phase options are given.
+    const allPhases = include.includes('moon_phases');
     const draft: ExportDraft = {
       format,
       startDate,
       endDate,
       timezone: resolveTimezone(args, ctx),
       hemisphere: optionalChoice(args, 'hemisphere', HEMISPHERES) ?? ctx.hemisphere,
-      includeMajorPhases: include.includes('moon_phases'),
+      includeMajorPhases: allPhases || include.includes('new_and_full_moons'),
+      quarterPhases: allPhases ? 'all' : include.includes('new_and_full_moons') ? 'newAndFull' : 'all',
       includeIngresses: include.includes('sign_changes'),
       includeDailySigns: include.includes('noon_signs'),
       includeEclipses: include.includes('eclipses'),

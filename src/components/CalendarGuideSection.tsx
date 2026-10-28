@@ -32,7 +32,7 @@ const GUIDE_ITEMS: GuideItem[] = [
     question: 'Which zodiac does this calendar use?',
     shortAnswer: 'The tropical zodiac: twelve equal 30° signs, starting with Aries at the March equinox.',
     details:
-      'Moon positions are calculated from Earth’s center using astronomy-engine. The calendar maps those positions to tropical signs rather than constellation boundaries. Daily phase illustrations show the noon snapshot; New Moon, First Quarter, Full Moon, and Third Quarter events have their own calculated times. Open Methodology & Verification in the Learn menu for calculation details.',
+      'Moon positions are calculated from Earth’s center using astronomy-engine. The calendar maps those positions to tropical signs rather than constellation boundaries. Daily phase illustrations and illumination show the noon snapshot; New Moon, First Quarter, Full Moon, and Third Quarter events have their own calculated times, and each names the date it falls on, even when its exact moment is near midnight. Open Methodology & Verification in the Learn menu for calculation details.',
     icon: <BookOpen className="w-4 h-4 text-[#5F6D61]" />,
   },
   {
