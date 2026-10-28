@@ -1,0 +1,21 @@
+{
+  "description": "Manual eval for on-device theme search. Run with `npm run eval:themes`. A query passes when one of `expect` is in the top three matches; an empty `expect` means no match should clear the score floor. Expected targets are the signs and phases whose own copy in src/utils/zodiac.ts and MOON_PHASE_MEANINGS covers the query.",
+  "queries": [
+    { "query": "starting a new business", "expect": ["Aries", "New Moon"] },
+    { "query": "plant a vegetable garden", "expect": ["Taurus", "New Moon"] },
+    { "query": "I need rest and quiet", "expect": ["Waning Crescent", "Pisces", "Scorpio"] },
+    { "query": "a hard, honest conversation with my partner", "expect": ["Scorpio", "Libra"] },
+    { "query": "learn a new language", "expect": ["Gemini", "Sagittarius"] },
+    { "query": "review my budget", "expect": ["Taurus", "Capricorn"] },
+    { "query": "throw a birthday party", "expect": ["Leo", "Full Moon"] },
+    { "query": "declutter my desk", "expect": ["Virgo", "Third Quarter"] },
+    { "query": "cook dinner for my family", "expect": ["Cancer", "Taurus"] },
+    { "query": "forgive someone and move on", "expect": ["Third Quarter", "Scorpio", "Waning Gibbous"] },
+    { "query": "plan a hiking trip", "expect": ["Sagittarius"] },
+    { "query": "set goals for my career", "expect": ["Capricorn", "New Moon"] },
+    { "query": "meditate", "expect": ["Pisces", "Scorpio", "Waning Crescent"] },
+    { "query": "fix bugs in my code", "expect": ["Virgo", "Aquarius"] },
+    { "query": "what is the capital of France", "expect": [] },
+    { "query": "quantum chromodynamics", "expect": [] }
+  ]
+}

@@ -23,9 +23,9 @@ export function themeTargetKey(target: ThemeTarget): string {
   return `${target.kind}:${target.name}`;
 }
 
-/** Sign descriptions open with "The Moon shifts into X. Energy focus:", which says nothing about the theme. */
+/** Sign descriptions open with "The Moon shifts into X (…). Energy focus:", which says nothing about the theme. */
 function signDescriptionBody(description: string): string {
-  return description.replace(/^The Moon shifts into \w+\.\s*(Energy focus:\s*)?/, '');
+  return description.replace(/^The Moon shifts into [^.]*\.\s*(Energy focus:\s*)?/, '');
 }
 
 export const THEME_CORPUS: ThemeEntry[] = [
