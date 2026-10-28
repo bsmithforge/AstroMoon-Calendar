@@ -184,6 +184,10 @@ const PHASE_EMOJI: Record<MoonPhaseName, { northern: string; southern: string }>
   'Waning Crescent': { northern: '🌘', southern: '🌒' },
 };
 
+export function getPhaseEmoji(name: MoonPhaseName, hemisphere: Hemisphere): string {
+  return PHASE_EMOJI[name][hemisphere === 'southern' ? 'southern' : 'northern'];
+}
+
 type QuarterName = NonNullable<MoonPhaseInfo['quarterName']>;
 const QUARTER_NAMES: readonly MoonPhaseName[] = ['New Moon', 'First Quarter', 'Full Moon', 'Third Quarter'];
 

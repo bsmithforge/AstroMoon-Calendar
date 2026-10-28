@@ -19,6 +19,7 @@ AstroMoon Cal is a client-side lunar calendar and almanac. It shows Moon phases,
 | `npm run build` | Build the static app into `dist/`, then bundle the API functions (`npm run build:api`) |
 | `npm run preview` | Serve the built app locally (no `api/`) |
 | `npm run eval:ask` | Live eval of Ask against a real provider (manual only; needs `AI_*` in `.env.local`; spends free quota) |
+| `npm run eval:themes` | Eval of on-device theme search with the real model in Node (manual only; needs `TRANSFORMERS_MODULE` pointing at `@huggingface/transformers@4.3.1` installed outside the project, see the script) |
 
 There is no formatter configuration. `.github/workflows/ci.yml` runs lint, test, and build on pushes to `main` and `dev` and on pull requests. A successful Vite build does not replace the separate type check.
 
@@ -62,6 +63,7 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 | `server/ai/provider.ts`, `server/ai/prompt.ts` | OpenAI-compatible Chat Completions client with fallback; committed system prompt |
 | `src/utils/almanacTools.ts`, `src/utils/almanacResults.ts` | Deterministic, validated tools the model calls (phases, ingresses, eclipses, a date's snapshot, traditional meanings) and their model/UI output formats |
 | `src/utils/dateRange.ts` | Shared YYYY-MM-DD validation and the 24-month / 3,660-day export limits |
+| `src/components/ThemeSearchPanel.tsx`, `src/utils/themeCorpus.ts`, `src/utils/themeSearch.ts`, `src/utils/themeModel.ts`, `src/workers/themeWorker.ts` | On-device theme search (Ask dialog's second tab): corpus from the app's own sign/phase copy, pure ranking and upcoming-day runs, and an all-MiniLM-L6-v2 embedder in a Web Worker. transformers.js is imported from jsDelivr at exactly 4.3.1 (not an npm dependency); the model (~29 MB) downloads only after an explicit tap. |
 | `src/utils/exportDraft.ts` | `ExportDraft`/`ExportSettings` shared by `ExportModal` and Ask's `prepare_export`, per-format draft checks, `getExportRecords()` for ICS/table records |
 | `evals/ask-questions.json`, `scripts/eval-ask.ts` | Live Ask eval set and runner (expected events computed by the tools at eval time) |
 | `scripts/build-api.mjs` | esbuild step (part of `npm run build`) bundling each `server/<name>.ts` + astronomy-engine into `server/dist/<name>.js` (gitignored) |
@@ -106,6 +108,7 @@ The export and subscription dialogs initialize their own toggles from app state;
 - Data-table PDFs consume filtered records and use standard PDF fonts with text sanitization, fixed-height rows, truncation, repeated headers, and page numbering.
 - Calendar PDFs capture off-screen `CalendarGrid` instances with `html-to-image`, one month per A4 page. They currently include whole months spanned by the selected range, capped at 24 months. Preserve the capture attributes `data-export-month` and `data-month-label`, and check both PDF modes after shared grid/export changes.
 - Keep PDF/image dependencies dynamically imported from the export actions unless there is a concrete reason to change loading behavior.
+- Don't use `React.lazy` without an error boundary: a failed chunk import (offline, or after a deploy renames chunks) unmounts the whole app. `AskModal` loads the theme search panel by hand and shows a retryable message instead. Keep slow synchronous work (range datasets, capture grids) out of tap handlers and first renders; the export dialog defers its capture grids with `useDeferredValue` for this reason.
 
 When changing export behavior:
 

@@ -258,14 +258,20 @@ As built:
 
 ### Phase 6: On-device theme search (`ai/06-theme-search`)
 
-1. `Add theme corpus`. Add `src/utils/themeCorpus.ts`, with entries taken from `ZODIAC_SIGNS` (theme, description, activities) and the phase meanings. Each entry points to a sign or a phase.
-2. `Add on-device embedding search`. Pin an exact `@huggingface/transformers` version and load it with a dynamic import. Use quantized `all-MiniLM-L6-v2` (about 23 MB). The corpus is embedded on first use and results are ranked by cosine similarity. Below a minimum similarity, the result is "no strong match."
+As built:
+
+1. `Add theme corpus`. Add `src/utils/themeCorpus.ts`, with 68 entries taken from `ZODIAC_SIGNS` and the phase meanings: each sign's theme and description, each of its activities, and each phase's meaning. Each entry points to a sign or a phase.
+2. `Add on-device embedding search`:
+   - `themeSearch.ts` is pure: it ranks the best entry per sign or phase by cosine similarity, applies a 0.3 floor (below it, "no strong match"), and groups the upcoming matching days into runs
+   - `themeModel.ts` runs quantized `all-MiniLM-L6-v2` in a **Web Worker**, so inference never blocks the page
+   - transformers.js is pinned at exactly 4.3.1 and imported dynamically from jsDelivr instead of npm (see the decision log)
 3. `Add theme search UI`. This is a tab in the Ask dialog:
-   - an explicit "Download on-device model (≈23 MB)" step with progress
-   - results that show the matching theme text and the next days whose noon sign or phase matches, within a 90-day window
-   - tapping a result opens that day
-   - the tab is offered automatically when Ask is unavailable or resting
-4. `Test ranking and corpus`. Unit tests use fixed vectors, so CI never downloads the model. A manual eval script checks that sample queries return the expected entries in the top three, and its results go in `docs/ai-evals.md`.
+   - an explicit "Download on-device model (≈29 MB)" step with progress, skipped when the model is already cached
+   - results that show the matching theme text and the next runs of days whose noon sign or day phase matches, within a 90-day window
+   - tapping a run opens its first day
+   - the tab is offered when Ask is not configured, resting, timing out, unavailable or offline
+   - the panel is its own chunk, loaded by hand rather than with `React.lazy`, because a failed lazy import blanked the whole app offline
+4. `Test ranking and corpus`. Unit tests use fixed vectors, so CI never downloads the model. `npm run eval:themes` runs 16 sample queries through the real model (16/16 pass); see [ai-evals.md](ai-evals.md).
 
 **Verify:**
 - the main bundle chunk is unchanged (compare build output sizes before and after)
@@ -309,4 +315,6 @@ As built:
 | 2026-10-27 | Phase branches merge into `dev`, and `dev` reaches `main` through release PRs. | Merged phases are tested together on a stable preview, with a live key and on real devices, before production. |
 | 2026-10-27 | Add a `get_traditional_meaning` tool. | Without it, questions about meanings would be answered from the model's general knowledge instead of the app's own copy. |
 | 2026-10-27 | Allow years and month names in answers only when the user typed them. | Restating the user's "2027" is harmless, but a model-written year or month can be wrong, so it fails the grounding check. |
+| 2026-10-28 | Load transformers.js from jsDelivr at an exact version (`@4.3.1/+esm`), not from npm. | The npm package adds ~480 MB of native Node binaries (`onnxruntime-node`, `sharp`) to every install, and the browser never uses them. The browser build fetches its WebAssembly runtime from jsDelivr anyway, so this adds no new host. |
+| 2026-10-28 | Run the theme model in a Web Worker. | Embedding the corpus takes ~2 s on desktop and longer on phones; on the main thread it would block taps (an INP problem). |
 | 2026-10-28 | Primary: Groq `openai/gpt-oss-120b`. Fallback: Gemini `gemini-3.5-flash-lite`, never used for requests from the EEA, UK or Switzerland or from an unknown country. | Both passed grounding on 20/20 eval answers. Groq doesn't train on prompts and has no regional restriction. Gemini's free tier may use prompts to improve its products and may not be offered in those regions. See [ai-evals.md](ai-evals.md). |
