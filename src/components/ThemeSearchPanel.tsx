@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertCircle, Cpu, Download, LoaderCircle, Search, ShieldCheck } from 'lucide-react';
+import { Flourish, MoonLoader, ScrollPrompt, Whispers } from './AlmanacScroll';
 import { DayLunarData, Hemisphere } from '../types';
 import { generateRangeDataset, getLocalDateComponents, getPhaseEmoji } from '../utils/astronomy';
 import { ThemeTarget, themeTargetKey } from '../utils/themeCorpus';
@@ -47,8 +47,10 @@ export const ThemeSearchPanel: React.FC<ThemeSearchPanelProps> = ({ timezone, he
   const [searching, setSearching] = useState(false);
   const [result, setResult] = useState<{ query: string; matches: ThemeMatch[] } | null>(null);
   const [days, setDays] = useState<DayLunarData[] | null>(null);
+  /** A search made before the model was ready: it starts the download and runs once loaded. */
+  const [queued, setQueued] = useState<string | null>(null);
   const indexRef = useRef<ThemeIndex | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const start = () => {
     setStatus('loading');
@@ -91,7 +93,14 @@ export const ThemeSearchPanel: React.FC<ThemeSearchPanelProps> = ({ timezone, he
 
   const search = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || !indexRef.current || searching) return;
+    if (!trimmed || searching) return;
+    // The first search is the go-ahead for the one-time download (the caption says so).
+    if (!indexRef.current) {
+      setQueued(trimmed);
+      setQuery('');
+      if (status === 'idle' || status === 'error') start();
+      return;
+    }
     setSearching(true);
     try {
       const matches = await indexRef.current.search(trimmed);
@@ -104,162 +113,115 @@ export const ThemeSearchPanel: React.FC<ThemeSearchPanelProps> = ({ timezone, he
     }
   };
 
+  useEffect(() => {
+    if (status !== 'ready' || !queued) return;
+    setQueued(null);
+    void search(queued);
+    // search reads the index, which is set before status becomes ready.
+  }, [status, queued]);
+
+  const busy = status === 'checking' || status === 'loading';
+  const needsDownload = status === 'idle' || status === 'error';
+
   return (
-    <>
-      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6">
-        <div className="space-y-5">
-          <p className="text-sm leading-relaxed text-[#182421]">
-            Describe something you want to do or feel, and find the coming days whose Moon sign or phase traditionally suits it.
-          </p>
+    <div className="almanac-reveal flex min-h-0 flex-1 flex-col pt-1">
+      <ScrollPrompt
+        id="theme-query"
+        label="Describe an intention or feeling"
+        value={query}
+        placeholder={result ? 'Seek another…' : 'What do you hope to do?'}
+        maxLength={200}
+        disabled={busy}
+        caption={
+          needsDownload
+            ? `First search downloads ≈${THEME_MODEL_DOWNLOAD_MB} MB once, then runs on this device`
+            : `Runs on this device · next ${THEME_WINDOW_DAYS} days · ${timezone}`
+        }
+        submitLabel="Seek a theme"
+        inputRef={inputRef}
+        onChange={setQuery}
+        onSubmit={() => void search(query)}
+      />
 
-          {status === 'idle' && (
-            <div className="space-y-3 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-4">
-              <p className="flex gap-2 text-xs leading-relaxed text-[#5F6D61]">
-                <Cpu size={15} className="mt-0.5 shrink-0 text-[#B89A62]" />
-                <span>
-                  Theme search runs entirely on this device. It needs a one-time download of an open-source language model
-                  ({THEME_MODEL_ID}, about {THEME_MODEL_DOWNLOAD_MB} MB) from Hugging Face and jsDelivr. Your browser keeps it, so it
-                  won’t download again, and searches keep working if your connection drops.
-                </span>
-              </p>
-              <button
-                type="button"
-                onClick={start}
-                className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md bg-[#182421] px-4 text-sm font-semibold text-[#F3EDDF] transition hover:bg-[#253631] min-[430px]:w-auto"
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 pb-5 pt-4 sm:px-8">
+        {(status === 'loading' || (status === 'checking' && queued)) && (
+          <div aria-live="polite">
+            {queued && (
+              <p className="break-words text-center font-serif-almanac text-[15px] italic text-[#7A7461]">“{queued}”</p>
+            )}
+            <MoonLoader
+              hemisphere={hemisphere}
+              label={progress !== null ? `Fetching the almanac’s model… ${Math.round(progress * 100)}%` : 'Reading the old themes…'}
+            />
+            {status === 'loading' && progress !== null && (
+              <div
+                role="progressbar"
+                aria-label="Model download"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(progress * 100)}
+                className="mx-auto -mt-4 h-px max-w-48 bg-[#B89A62]/25"
               >
-                <Download size={16} />
-                Download on-device model (≈{THEME_MODEL_DOWNLOAD_MB} MB)
-              </button>
-            </div>
-          )}
-
-          {(status === 'checking' || status === 'loading') && (
-            <div className="space-y-2" aria-live="polite">
-              <p className="flex items-center gap-2 text-sm text-[#5F6D61]">
-                <LoaderCircle size={16} className="shrink-0 animate-spin text-[#B89A62] motion-reduce:animate-none" />
-                {status === 'checking'
-                  ? 'Checking for the on-device model…'
-                  : progress !== null
-                    ? `Downloading the model… ${Math.round(progress * 100)}%`
-                    : 'Preparing themes…'}
-              </p>
-              {status === 'loading' && progress !== null && (
-                <div
-                  role="progressbar"
-                  aria-label="Model download"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(progress * 100)}
-                  className="h-2 overflow-hidden rounded-sm bg-[#EAE2D0]"
-                >
-                  <div className="h-full bg-[#B89A62] transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {status === 'error' && (
-            <div className="flex gap-2.5 rounded-md border border-[#B44732]/40 bg-[#FAF6EE] p-3 text-sm text-[#182421]">
-              <AlertCircle size={16} className="mt-0.5 shrink-0 text-[#B44732]" />
-              <div className="min-w-0 space-y-2">
-                <p className="break-words">{error ?? 'The on-device model could not load.'}</p>
-                <button type="button" onClick={start} className="min-h-11 rounded-md border border-[#D8D0BF] bg-[#FAF7F0] px-3 text-sm font-medium hover:bg-[#EAE2D0]">
-                  Try again
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div aria-live="polite" aria-busy={searching}>
-            {result && (
-              <div className="space-y-3">
-                <p className="border-l-2 border-[#B89A62] pl-3 font-serif-almanac text-lg leading-snug text-[#182421] break-words">
-                  <span className="sr-only">You searched for: </span>
-                  {result.query}
-                </p>
-                {result.matches.length === 0 ? (
-                  <p className="text-sm text-[#5F6D61]">
-                    No strong match. Try describing an activity or a feeling, like “planting a garden” or “a hard conversation”.
-                  </p>
-                ) : (
-                  <ol className="space-y-3">
-                    {result.matches.map((match) => (
-                      <ThemeResult
-                        key={themeTargetKey(match.target)}
-                        match={match}
-                        hemisphere={hemisphere}
-                        runs={days ? findUpcomingRuns(days, match.target) : null}
-                        onOpenDate={onOpenDate}
-                      />
-                    ))}
-                  </ol>
-                )}
+                <div className="h-px bg-[#B44732] transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
               </div>
             )}
           </div>
+        )}
 
-          {status === 'ready' && !searching && (
-            <div className="space-y-2">
-              <p className="font-serif-almanac text-xs font-semibold uppercase tracking-wider">{result ? 'Search another' : 'Try'}</p>
-              <div className="flex flex-wrap gap-2">
-                {EXAMPLES.filter((example) => example !== result?.query).map((example) => (
-                  <button
-                    key={example}
-                    type="button"
-                    onClick={() => void search(example)}
-                    className="min-h-11 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] px-3 py-2 text-left text-sm text-[#182421] transition hover:border-[#B89A62] hover:bg-[#F3EDDF]"
-                  >
-                    {example}
-                  </button>
-                ))}
-              </div>
+        {status === 'error' && (
+          <div className="almanac-reveal space-y-1 text-center">
+            <p className="break-words font-serif-almanac text-lg italic text-[#B44732]">{error ?? 'The on-device model could not load.'}</p>
+            <button type="button" onClick={start} className="min-h-11 font-serif-almanac text-[17px] italic text-[#182421] underline decoration-[#B89A62] underline-offset-4">
+              Try again
+            </button>
+          </div>
+        )}
+
+        <div aria-live="polite" aria-busy={searching}>
+          {result && (
+            <div key={result.query} className="space-y-1">
+              <p className="break-words text-center font-serif-almanac text-[15px] italic text-[#7A7461]">
+                <span className="sr-only">You searched for: </span>“{result.query}”
+              </p>
+              {result.matches.length === 0 ? (
+                <p className="almanac-ink pt-3 text-center font-serif-almanac text-[17px] italic text-[#4F5A51]">
+                  The almanac finds no strong match. Try an activity or a feeling, like “planting a garden” or “a hard conversation”.
+                </p>
+              ) : (
+                <ol>
+                  {result.matches.map((match, index) => (
+                    <ThemeResult
+                      key={themeTargetKey(match.target)}
+                      index={index}
+                      match={match}
+                      hemisphere={hemisphere}
+                      runs={days ? findUpcomingRuns(days, match.target) : null}
+                      onOpenDate={onOpenDate}
+                    />
+                  ))}
+                </ol>
+              )}
             </div>
           )}
-
-          <p className="flex gap-2 border-t border-[#D8D0BF] pt-4 text-[11px] leading-relaxed text-[#5F6D61]">
-            <ShieldCheck size={14} className="mt-0.5 shrink-0 text-[#B89A62]" />
-            <span>
-              What you type here never leaves this device. Matches come from AstroMoon’s traditional interpretations, and days use
-              the noon sign and phase in {timezone}.
-            </span>
-          </p>
         </div>
+
+        {(status === 'ready' || status === 'idle') && !searching && !queued && (
+          <div className={result ? 'mt-2' : ''}>
+            {result && <Flourish />}
+            <Whispers
+              label={result ? 'Or seek' : 'Perhaps'}
+              items={EXAMPLES.filter((example) => example !== result?.query)}
+              onPick={(example) => void search(example)}
+            />
+          </div>
+        )}
+
+        <p className="mt-6 text-center text-[10.5px] leading-relaxed text-[#8A8471]">
+          Private: what you type never leaves this device. Uses the open-source {THEME_MODEL_ID} model from Hugging Face, kept by your
+          browser. Matches come from AstroMoon’s traditional interpretations.
+        </p>
       </div>
-
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          void search(query);
-        }}
-        className="shrink-0 border-t border-[#D8D0BF] bg-[#EBE3D0] p-3 sm:p-4"
-      >
-        <label htmlFor="theme-query" className="sr-only">Describe an intention or feeling</label>
-        <div className="flex items-end gap-2">
-          <input
-            id="theme-query"
-            ref={inputRef}
-            type="search"
-            value={query}
-            maxLength={200}
-            enterKeyHint="search"
-            disabled={status !== 'ready'}
-            placeholder={status === 'ready' ? 'Describe an intention…' : 'Load the model to search'}
-            onChange={(event) => setQuery(event.target.value)}
-            className="min-h-11 w-full min-w-0 flex-1 rounded-md border border-[#D8D0BF] bg-[#FFFDF9] px-3 py-2.5 text-base text-[#182421] placeholder:text-[#7A857C] focus:border-[#182421] focus:outline-none disabled:opacity-60 sm:text-sm"
-          />
-          <button
-            type="submit"
-            disabled={status !== 'ready' || searching || !query.trim()}
-            aria-label="Search themes"
-            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#B44732] px-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#9E3D2A] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Search size={17} />
-            <span className="hidden min-[400px]:inline">Search</span>
-          </button>
-        </div>
-        <p className="mt-1.5 text-[11px] text-[#5F6D61]">On-device · next {THEME_WINDOW_DAYS} days</p>
-      </form>
-    </>
+    </div>
   );
 };
 
@@ -279,34 +241,38 @@ function describeRun(run: DayRun): string {
 }
 
 const ThemeResult: React.FC<{
+  index: number;
   match: ThemeMatch;
   hemisphere: Hemisphere;
   runs: DayRun[] | null;
   onOpenDate: (dateString: string) => void;
-}> = ({ match, hemisphere, runs, onOpenDate }) => (
-  <li className="rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-3">
-    <p className="font-serif-almanac text-base font-semibold text-[#182421]">{targetLabel(match.target, hemisphere)}</p>
-    <p className="mt-1 text-sm leading-relaxed text-[#182421]">“{match.entry.text}”</p>
-    <p className="mt-0.5 text-[11px] text-[#5F6D61]">Traditional interpretation</p>
-    <div className="mt-2.5">
+}> = ({ index, match, hemisphere, runs, onOpenDate }) => (
+  <li className="almanac-reveal border-b border-[#B89A62]/25 py-4 last:border-b-0" style={{ animationDelay: `${index * 140}ms` }}>
+    <p className="font-serif-almanac text-xl text-[#182421]">{targetLabel(match.target, hemisphere)}</p>
+    <p className="mt-1 font-serif-almanac text-[17px] italic leading-relaxed text-[#4F5A51]">
+      “{match.entry.text}”
+      <span className="ml-1.5 whitespace-nowrap font-sans-almanac text-[10.5px] not-italic tracking-wide text-[#8A8471]">traditional</span>
+    </p>
+    <div className="mt-1">
       {runs === null ? (
-        <p className="text-xs text-[#5F6D61]">Finding upcoming days…</p>
+        <p className="text-[12px] italic text-[#8A8471]">Finding upcoming days…</p>
       ) : runs.length === 0 ? (
-        <p className="text-xs text-[#5F6D61]">None in the next {THEME_WINDOW_DAYS} days.</p>
+        <p className="text-[12px] italic text-[#8A8471]">None in the next {THEME_WINDOW_DAYS} days.</p>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <ul className="flex flex-wrap items-center gap-x-4">
           {runs.map((run) => (
-            <button
-              key={run.startDate}
-              type="button"
-              onClick={() => onOpenDate(run.startDate)}
-              aria-label={`${describeRun(run)}: open ${run.startDate}`}
-              className="min-h-11 rounded-md border border-[#B89A62]/70 bg-[#F6EFE0] px-3 text-sm text-[#182421] transition hover:border-[#B44732] hover:bg-[#FFFDF9]"
-            >
-              {describeRun(run)}
-            </button>
+            <li key={run.startDate}>
+              <button
+                type="button"
+                onClick={() => onOpenDate(run.startDate)}
+                aria-label={`${describeRun(run)}: open ${run.startDate}`}
+                className="min-h-11 rounded-sm text-[14px] font-medium text-[#182421] underline decoration-[#B89A62] decoration-2 underline-offset-[5px] transition hover:text-[#B44732] hover:decoration-[#B44732]"
+              >
+                {describeRun(run)}
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   </li>

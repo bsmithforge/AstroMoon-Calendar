@@ -53,7 +53,7 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 | `src/components/DayDetailModal.tsx` | Noon snapshot, exact events, single-day ICS download |
 | `src/components/ExportModal.tsx` | Export ranges/toggles, downloads, off-screen calendar capture |
 | `src/components/SubscribeModal.tsx` | Live-feed event selection, calendar-app links, and subscription URL copy flow |
-| `src/components/AskModal.tsx` | Ask the Almanac dialog: question input, answers with event chips that open the cited day, "How this was answered", privacy note, error states |
+| `src/components/AskModal.tsx`, `src/components/AlmanacScroll.tsx` | Ask the Almanac as an unrolling parchment scroll: one prompt line, suggestions as italic phrases, answers inked with brass-underlined events that open the cited day, the export draft as a sealed note, "How this was answered" and privacy as footnotes. `AlmanacScroll.tsx` holds the shared rods, prompt, suggestions, phase-cycling Moon loader, and `useUnroll()`. Animations live in `index.css` (`almanac-*`) and switch off under reduced motion. |
 | `src/utils/askClient.ts` | `/api/ask` client, shared Ask response types, engine-based event time/title formatting for chips |
 | `src/utils/icsExport.ts` | ICS serialization and browser download |
 | `src/utils/subscription.ts` | Webcal feed contract: query parsing/building, rolling window, feed payload, add-to-calendar links |

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowUp, ChevronDown, Download, Feather, LoaderCircle, ShieldCheck, X } from 'lucide-react';
+import { ChevronDown, Download, X } from 'lucide-react';
+import { Flourish, MoonLoader, ScrollPrompt, ScrollRod, useUnroll, Whispers } from './AlmanacScroll';
 import { Hemisphere } from '../types';
 import { EventView } from '../utils/almanacResults';
 import { countMonthsSpanned } from '../utils/dateRange';
@@ -44,10 +45,10 @@ type AskTab = 'ask' | 'themes';
 const EXAMPLE_QUESTIONS = [
   'When is the next full moon?',
   'What sign is the Moon in today?',
+  'A printable calendar of next year’s full and new moons',
+  'What does a New Moon in Scorpio mean?',
   'What eclipses happen next year?',
   'Which full moons next year are in fire signs?',
-  'What does a New Moon in Scorpio mean?',
-  'Make me a printable calendar of next year’s full and new moons',
 ];
 
 const TOOL_LABELS: Record<string, string> = {
@@ -80,6 +81,8 @@ const AskModalContent: React.FC<AskModalProps> = ({
   const [exchange, setExchange] = useState<AskExchange | null>(lastExchange);
   const visibleArea = useVisibleArea();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null);
+  useUnroll(paperRef);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const closeRef = useRef(onClose);
@@ -166,23 +169,13 @@ const AskModalContent: React.FC<AskModalProps> = ({
     }
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    void ask(question);
-  };
-
-  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      void ask(question);
-    }
-  };
+  const examples = EXAMPLE_QUESTIONS.filter((q) => q !== exchange?.question).slice(0, exchange ? 3 : 4);
 
   return (
     <div
       id="ask-modal-overlay"
       style={visibleArea ? { top: visibleArea.top, height: visibleArea.height, bottom: 'auto' } : undefined}
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-[#182421]/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0E1614]/85 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:p-6"
       onClick={onClose}
     >
       <div
@@ -193,159 +186,119 @@ const AskModalContent: React.FC<AskModalProps> = ({
         aria-modal="true"
         aria-labelledby="ask-modal-title"
         onClick={(event) => event.stopPropagation()}
-        className="flex h-full max-h-[min(44rem,100%)] w-full min-w-0 max-w-xl flex-col overflow-hidden rounded-lg border border-[#D8D0BF] bg-[#FAF7F0] text-[#182421] shadow-2xl font-sans-almanac animate-fade-in sm:h-auto"
+        className="flex max-h-[min(46rem,100%)] w-full min-w-0 max-w-xl flex-col font-sans-almanac text-[#182421] drop-shadow-[0_24px_40px_rgba(0,0,0,0.45)] focus:outline-none"
       >
-        <div className="relative flex shrink-0 items-center justify-between gap-3 border-b border-[#B89A62]/40 bg-[#182421] px-4 py-3 text-[#F3EDDF] sm:px-6 sm:py-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#B89A62]/60 bg-[#121A18]">
-              <Feather size={19} className="text-[#B89A62]" />
-            </div>
-            <div className="min-w-0">
-              <h3 id="ask-modal-title" className="font-serif-almanac text-xl font-bold tracking-tight text-[#F3EDDF]">
-                Ask the Almanac
-              </h3>
-              <p className="mt-0.5 text-xs text-[#D8D0BF]">
-                {tab === 'ask' ? 'AI answers, dated by the almanac' : 'Private theme search, on this device'}
-              </p>
-            </div>
-          </div>
-          <button
-            id="close-ask-modal-btn"
-            type="button"
-            aria-label="Close Ask the Almanac"
-            onClick={onClose}
-            className="min-h-11 min-w-11 shrink-0 rounded-md p-1.5 text-[#D8D0BF] transition hover:bg-[#253631] hover:text-[#F3EDDF]"
-          >
-            <X size={20} className="mx-auto" />
-          </button>
-        </div>
-
-        <div role="tablist" aria-label="Ask or search themes" className="grid shrink-0 grid-cols-2 border-b border-[#D8D0BF] bg-[#EBE3D0] text-sm">
-          {([['ask', 'Ask'], ['themes', 'Theme search']] as const).map(([value, label]) => (
-            <button
-              key={value}
-              id={`ask-tab-${value}`}
-              type="button"
-              role="tab"
-              aria-selected={tab === value}
-              aria-controls={`ask-panel-${value}`}
-              onClick={() => setTab(value)}
-              className={`min-h-11 px-3 font-medium transition ${
-                tab === value
-                  ? 'bg-[#FAF7F0] text-[#182421] shadow-[inset_0_-2px_0_#B89A62]'
-                  : 'text-[#5F6D61] hover:bg-[#F3EDDF] hover:text-[#182421]'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {tab === 'themes' ? (
-          <div id="ask-panel-themes" role="tabpanel" aria-labelledby="ask-tab-themes" className="flex min-h-0 flex-1 flex-col">
-            {ThemePanel === 'failed' ? (
-              <div className="flex-1 space-y-3 p-6 text-sm text-[#182421]">
-                <p>Theme search couldn’t load. Check your connection.</p>
-                <button type="button" onClick={() => setThemePanel(null)} className="min-h-11 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] px-3 font-medium hover:bg-[#EAE2D0]">
-                  Try again
-                </button>
+        <ScrollRod />
+        {/* The paper unrolls from the top rod and pushes the bottom rod down. */}
+        <div ref={paperRef} className="-my-1 mx-2 flex min-h-0 flex-col sm:mx-3">
+          <div className="almanac-paper flex min-h-0 flex-col overflow-hidden">
+            <div className="almanac-reveal flex shrink-0 items-center justify-between gap-2 px-3 pt-2.5 sm:px-6" style={{ animationDelay: '460ms' }}>
+              <h2 id="ask-modal-title" className="sr-only">Ask the Almanac</h2>
+              <div role="tablist" aria-label="Ask a question or seek a theme" className="flex min-w-0 items-center">
+                {([['ask', 'Ask'], ['themes', 'Seek a theme']] as const).map(([value, label], index) => (
+                  <React.Fragment key={value}>
+                    {index > 0 && <span aria-hidden="true" className="text-[#B89A62]">·</span>}
+                    <button
+                      id={`ask-tab-${value}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={tab === value}
+                      aria-controls={`ask-panel-${value}`}
+                      onClick={() => setTab(value)}
+                      className={`min-h-11 px-2 font-cinzel text-[11px] tracking-[0.2em] transition ${
+                        tab === value
+                          ? 'text-[#182421] underline decoration-[#B89A62] decoration-2 underline-offset-[6px]'
+                          : 'text-[#8A8471] hover:text-[#182421]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  </React.Fragment>
+                ))}
               </div>
-            ) : ThemePanel ? (
-              <ThemePanel timezone={timezone} hemisphere={hemisphere} onOpenDate={onOpenDate} />
+              <button
+                id="close-ask-modal-btn"
+                type="button"
+                aria-label="Close Ask the Almanac"
+                onClick={onClose}
+                className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-[#7A7461] transition hover:bg-[#B89A62]/15 hover:text-[#182421]"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {tab === 'themes' ? (
+              <div id="ask-panel-themes" role="tabpanel" aria-labelledby="ask-tab-themes" className="flex min-h-0 flex-1 flex-col">
+                {ThemePanel === 'failed' ? (
+                  <div className="space-y-2 px-5 pb-6 pt-2 sm:px-8">
+                    <p className="font-serif-almanac text-lg italic text-[#B44732]">Theme search couldn’t load. Check your connection.</p>
+                    <button type="button" onClick={() => setThemePanel(null)} className="min-h-11 font-serif-almanac text-[17px] italic text-[#182421] underline decoration-[#B89A62] underline-offset-4">
+                      Try again
+                    </button>
+                  </div>
+                ) : ThemePanel ? (
+                  <ThemePanel timezone={timezone} hemisphere={hemisphere} onOpenDate={onOpenDate} />
+                ) : (
+                  <MoonLoader label="Opening the pages…" hemisphere={hemisphere} />
+                )}
+              </div>
             ) : (
-              <p className="flex-1 p-6 text-sm text-[#5F6D61]">Loading theme search…</p>
-            )}
-          </div>
-        ) : (
-        <div id="ask-panel-ask" role="tabpanel" aria-labelledby="ask-tab-ask" className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6">
-          <div>
-            {/* Always mounted so screen readers announce answers; spaced only once it has one. */}
-            <div aria-live="polite" aria-busy={!!pending} className={pending || exchange ? 'mb-5' : undefined}>
-              {pending ? (
-                <div className="space-y-3">
-                  <QuestionHeading question={pending} />
-                  <p className="flex items-center gap-2 text-sm text-[#5F6D61]">
-                    <LoaderCircle size={16} className="shrink-0 animate-spin text-[#B89A62] motion-reduce:animate-none" />
-                    Consulting the almanac…
+              <div id="ask-panel-ask" role="tabpanel" aria-labelledby="ask-tab-ask" className="almanac-reveal flex min-h-0 flex-1 flex-col pt-1" style={{ animationDelay: '540ms' }}>
+                <ScrollPrompt
+                  id="ask-question"
+                  label="Your question"
+                  value={question}
+                  placeholder={exchange ? 'Ask another…' : 'What would you ask?'}
+                  maxLength={ASK_QUESTION_MAX_LENGTH}
+                  caption={
+                    <>
+                      Times in {timezone} · {hemisphere} sky
+                      {question.length > ASK_QUESTION_MAX_LENGTH - 100 && ` · ${question.length}/${ASK_QUESTION_MAX_LENGTH}`}
+                    </>
+                  }
+                  submitLabel="Ask"
+                  inputRef={inputRef}
+                  onChange={setQuestion}
+                  onSubmit={() => void ask(question)}
+                />
+                <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 pb-5 pt-4 sm:px-8">
+                  {/* Always mounted so screen readers announce answers. */}
+                  <div aria-live="polite" aria-busy={!!pending}>
+                    {pending ? (
+                      <>
+                        <QuestionEcho question={pending} />
+                        <MoonLoader label="Consulting the almanac…" hemisphere={hemisphere} />
+                      </>
+                    ) : exchange ? (
+                      <div key={exchange.question} className="space-y-3">
+                        <QuestionEcho question={exchange.question} />
+                        {'result' in exchange.outcome ? (
+                          <Answer result={exchange.outcome.result} onOpenEvent={onOpenEvent} onReviewExport={onReviewExport} />
+                        ) : (
+                          <AskError outcome={exchange.outcome} onTryThemes={() => setTab('themes')} />
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {!pending && (
+                    <div className={exchange ? 'mt-2' : ''}>
+                      {exchange && <Flourish />}
+                      <Whispers label={exchange ? 'Or perhaps' : 'Perhaps ask'} items={examples} onPick={(item) => void ask(item)} />
+                    </div>
+                  )}
+
+                  <p className="mt-6 text-center text-[10.5px] leading-relaxed text-[#8A8471]">
+                    {/* Providers and their data terms: docs/ai-evals.md */}
+                    Answers are written by an AI (Groq, with Google Gemini as a backup outside the EEA, UK, and Switzerland) and can be imperfect;
+                    every date, time, and meaning comes from AstroMoon. Please don’t include personal information.
                   </p>
                 </div>
-              ) : exchange ? (
-                <div className="space-y-3">
-                  <QuestionHeading question={exchange.question} />
-                  {'result' in exchange.outcome ? (
-                    <Answer result={exchange.outcome.result} onOpenEvent={onOpenEvent} onReviewExport={onReviewExport} />
-                  ) : (
-                    <AskError outcome={exchange.outcome} onTryThemes={() => setTab('themes')} />
-                  )}
-                </div>
-              ) : null}
-            </div>
-
-            {!pending && (
-              <div className="space-y-2">
-                <p className="font-serif-almanac text-xs font-semibold uppercase tracking-wider">
-                  {exchange ? 'Ask another' : 'Try asking'}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(exchange ? EXAMPLE_QUESTIONS.filter((q) => q !== exchange.question).slice(0, 3) : EXAMPLE_QUESTIONS).map((example) => (
-                    <button
-                      key={example}
-                      type="button"
-                      onClick={() => void ask(example)}
-                      className="min-h-11 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] px-3 py-2 text-left text-sm text-[#182421] transition hover:border-[#B89A62] hover:bg-[#F3EDDF]"
-                    >
-                      {example}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
-
-            <p className="mt-5 flex gap-2 border-t border-[#D8D0BF] pt-4 text-[11px] leading-relaxed text-[#5F6D61]">
-              <ShieldCheck size={14} className="mt-0.5 shrink-0 text-[#B89A62]" />
-              <span>
-                {/* Providers and their data terms: docs/ai-evals.md */}
-                Questions are sent to an AI model: Groq, with Google Gemini as a backup outside the EEA, UK, and Switzerland. Don’t include personal information. The AI chooses what to look up and writes the wording, which can be imperfect; dates, times, and meanings come from AstroMoon.
-              </span>
-            </p>
           </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="shrink-0 border-t border-[#D8D0BF] bg-[#EBE3D0] p-3 sm:p-4">
-          <label htmlFor="ask-question" className="sr-only">Your question</label>
-          <div className="flex items-end gap-2">
-            <textarea
-              id="ask-question"
-              ref={inputRef}
-              rows={1}
-              value={question}
-              maxLength={ASK_QUESTION_MAX_LENGTH}
-              enterKeyHint="send"
-              placeholder="Ask about the Moon…"
-              onChange={(event) => setQuestion(event.target.value)}
-              onKeyDown={handleInputKeyDown}
-              className="max-h-32 min-h-11 w-full min-w-0 flex-1 resize-none rounded-md border border-[#D8D0BF] bg-[#FFFDF9] px-3 py-2.5 text-base leading-snug text-[#182421] placeholder:text-[#7A857C] focus:border-[#182421] focus:outline-none sm:text-sm"
-            />
-            <button
-              type="submit"
-              disabled={!!pending || !question.trim()}
-              aria-label="Ask"
-              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#B44732] px-3 text-sm font-semibold text-white shadow-xs transition hover:bg-[#9E3D2A] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <ArrowUp size={18} />
-              <span className="hidden min-[400px]:inline">Ask</span>
-            </button>
-          </div>
-          <p className="mt-1.5 flex min-w-0 justify-between gap-3 text-[11px] text-[#5F6D61]">
-            <span className="min-w-0 break-words">Times in {timezone} · {hemisphere} hemisphere</span>
-            {question.length > ASK_QUESTION_MAX_LENGTH - 100 && (
-              <span className="shrink-0">{question.length}/{ASK_QUESTION_MAX_LENGTH}</span>
-            )}
-          </p>
-        </form>
-        </div>
-        )}
+        <ScrollRod />
       </div>
     </div>
   );
@@ -377,10 +330,9 @@ function useVisibleArea(): { top: number; height: number } | null {
   return area;
 }
 
-const QuestionHeading: React.FC<{ question: string }> = ({ question }) => (
-  <p className="border-l-2 border-[#B89A62] pl-3 font-serif-almanac text-lg leading-snug text-[#182421] break-words">
-    <span className="sr-only">You asked: </span>
-    {question}
+const QuestionEcho: React.FC<{ question: string }> = ({ question }) => (
+  <p className="break-words text-center font-serif-almanac text-[15px] italic text-[#7A7461]">
+    <span className="sr-only">You asked: </span>“{question}”
   </p>
 );
 
@@ -391,8 +343,9 @@ const Answer: React.FC<{
 }> = ({ result, onOpenEvent, onReviewExport }) => {
   const events = new Map(result.events.map((event) => [event.id, event]));
   return (
-    <div className="space-y-3">
-      <p className="whitespace-pre-line break-words text-[15px] leading-7 text-[#182421]">
+    <div className="space-y-4">
+      {/* Inked onto the page, with a drop capital. */}
+      <p className="almanac-ink whitespace-pre-line break-words font-serif-almanac text-[18px] leading-8 text-[#182421] first-letter:float-left first-letter:mr-1.5 first-letter:mt-1.5 first-letter:font-cinzel first-letter:text-[2.7rem] first-letter:leading-[0.8] first-letter:text-[#B44732]">
         {result.segments.map((segment, index) => {
           if (segment.type === 'text') return <React.Fragment key={index}>{segment.text}</React.Fragment>;
           const event = events.get(segment.id);
@@ -400,15 +353,17 @@ const Answer: React.FC<{
         })}
       </p>
       {result.exportDraft && <ExportDraftCard draft={result.exportDraft} onReview={onReviewExport} />}
-      {result.events.length > 0 && (
-        <p className="text-[11px] text-[#5F6D61]">Tap an event to open that day in the calendar.</p>
-      )}
-      <HowAnswered result={result} />
+      <div className="almanac-reveal flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1" style={{ animationDelay: '700ms' }}>
+        {result.events.length > 0 && (
+          <p className="font-serif-almanac text-[13px] italic text-[#7A7461]">Tap an underlined event to open its day.</p>
+        )}
+        <HowAnswered result={result} />
+      </div>
     </div>
   );
 };
 
-// A link rather than a button: buttons render as inline blocks, so a long chip
+// A link rather than a button: buttons render as inline blocks, so a long event
 // would take a whole line instead of wrapping with the sentence. The href is
 // the event's month, so opening it in a new tab still lands somewhere useful.
 const EventChip: React.FC<{ event: EventView; onOpen: (event: EventView) => void }> = ({ event, onOpen }) => {
@@ -424,15 +379,15 @@ const EventChip: React.FC<{ event: EventView; onOpen: (event: EventView) => void
         onOpen(event);
       }}
       aria-label={`${title}, ${time}. Open this day`}
-      className="rounded-sm border border-[#B89A62]/70 bg-[#F6EFE0] px-1 py-0.5 text-[13px] text-[#182421] no-underline box-decoration-clone transition hover:border-[#B44732] hover:bg-[#FFFDF9]"
+      className="border-b-2 border-[#B89A62]/70 font-semibold text-[#182421] no-underline transition hover:border-[#B44732] hover:text-[#B44732]"
     >
-      <span className="font-semibold">{title}</span>
-      <span className="text-[#5F6D61]"> · {time}</span>
+      {title}
+      <span className="font-sans-almanac text-[0.74em] font-medium tracking-wide text-[#6B6656]"> · {time}</span>
     </a>
   );
 };
 
-/** What prepare_export set up, shown from the draft itself rather than the model's wording. */
+/** What prepare_export set up, as a sealed note, shown from the draft itself rather than the model's wording. */
 const ExportDraftCard: React.FC<{ draft: ExportDraft; onReview: (draft: ExportDraft) => void }> = ({ draft, onReview }) => {
   const months = countMonthsSpanned(draft.startDate, draft.endDate);
   const rows: [string, string][] = [
@@ -445,12 +400,16 @@ const ExportDraftCard: React.FC<{ draft: ExportDraft; onReview: (draft: ExportDr
     ['Moon', `${draft.hemisphere} hemisphere`],
   ];
   return (
-    <div className="rounded-md border border-[#B89A62] bg-[#F6EFE0] p-3 sm:p-4">
-      <p className="font-serif-almanac text-xs font-semibold uppercase tracking-wider text-[#182421]">Export ready to review</p>
-      <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+    <div className="almanac-reveal relative mt-5 rounded-sm border border-[#B89A62]/50 bg-[#FBF7EE]/80 px-4 pb-2 pt-4" style={{ animationDelay: '500ms' }}>
+      {/* Wax seal */}
+      <span aria-hidden="true" className="absolute -top-3.5 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-[#B44732] text-[#F3EDDF] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_0_0_3px_rgba(255,255,255,0.15)]">
+        <Download size={14} />
+      </span>
+      <p className="font-cinzel text-[10px] tracking-[0.22em] text-[#86662E]">Your export, ready to review</p>
+      <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-[13px]">
         {rows.map(([label, value]) => (
           <React.Fragment key={label}>
-            <dt className="text-[#5F6D61]">{label}</dt>
+            <dt className="text-[#7A7461]">{label}</dt>
             <dd className="min-w-0 break-words text-[#182421]">{value}</dd>
           </React.Fragment>
         ))}
@@ -458,10 +417,9 @@ const ExportDraftCard: React.FC<{ draft: ExportDraft; onReview: (draft: ExportDr
       <button
         type="button"
         onClick={() => onReview(draft)}
-        className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md bg-[#B44732] px-4 text-sm font-semibold text-white shadow-xs transition hover:bg-[#9E3D2A] min-[430px]:w-auto"
+        className="mt-1 inline-flex min-h-11 items-center font-serif-almanac text-[17px] italic text-[#B44732] underline decoration-[#B44732]/40 underline-offset-4 transition hover:decoration-[#B44732]"
       >
-        <Download size={16} />
-        Review export
+        Review export →
       </button>
     </div>
   );
@@ -477,25 +435,23 @@ const HowAnswered: React.FC<{ result: AskResult }> = ({ result }) => {
           ? 'Every event above was checked against what the almanac returned, and its date and time are shown from AstroMoon’s calculations.'
           : 'The answer cites no dated events, and was checked for dates the AI wrote itself.';
   const exportNote = result.exportDraft
-    ? 'The export card shows the settings exactly as the tool validated them; nothing downloads until you choose in the export dialog.'
+    ? 'The export note shows the settings exactly as the tool validated them; nothing downloads until you choose in the export dialog.'
     : null;
   return (
-    <details className="group rounded-md border border-[#D8D0BF] bg-[#FAF6EE] text-xs text-[#5F6D61]">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 font-medium text-[#182421] [&::-webkit-details-marker]:hidden">
+    <details className="group min-w-0 basis-full text-[12px] text-[#6B6656] sm:basis-auto [&[open]]:basis-full">
+      <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 underline decoration-dotted underline-offset-4 hover:text-[#182421] [&::-webkit-details-marker]:hidden">
         How this was answered
-        <ChevronDown size={14} className="shrink-0 transition group-open:rotate-180" />
+        <ChevronDown size={13} className="transition group-open:rotate-180" />
       </summary>
-      <div className="space-y-3 border-t border-[#D8D0BF] px-3 py-3 leading-relaxed">
+      <div className="space-y-2 border-l-2 border-[#B89A62]/50 pb-1 pl-3 leading-relaxed">
         {result.trace.length > 0 ? (
-          <ol className="space-y-2">
+          <ol className="space-y-1.5">
             {result.trace.map((entry, index) => (
               <li key={index} className="min-w-0">
-                <p className="font-medium text-[#182421]">
-                  {TOOL_LABELS[entry.tool] ?? entry.tool}
-                  {!entry.ok && <span className="font-normal text-[#B44732]"> · returned an error</span>}
-                </p>
-                <p className="break-words">{entry.detail}</p>
-                <code className="mt-0.5 block break-all font-mono text-[11px] text-[#7A857C]">
+                <span className="font-medium text-[#182421]">{TOOL_LABELS[entry.tool] ?? entry.tool}</span>
+                {!entry.ok && <span className="text-[#B44732]"> · returned an error</span>}
+                <span className="block break-words">{entry.detail}</span>
+                <code className="block break-all font-mono text-[10.5px] text-[#8A8471]">
                   {entry.tool}({typeof entry.arguments === 'string' ? entry.arguments : JSON.stringify(entry.arguments)})
                 </code>
               </li>
@@ -506,7 +462,7 @@ const HowAnswered: React.FC<{ result: AskResult }> = ({ result }) => {
         )}
         <p>{check}</p>
         {exportNote && <p>{exportNote}</p>}
-        {result.model && <p>Model: <span className="font-mono text-[11px]">{result.model}</span></p>}
+        {result.model && <p>Model: <span className="font-mono text-[10.5px]">{result.model}</span></p>}
       </div>
     </details>
   );
@@ -516,24 +472,21 @@ const HowAnswered: React.FC<{ result: AskResult }> = ({ result }) => {
 const THEME_FALLBACK_ERRORS = new Set(['not_configured', 'resting', 'timeout', 'unavailable', 'internal', 'network']);
 
 const AskError: React.FC<{ outcome: Extract<AskOutcome, { ok: false }>; onTryThemes: () => void }> = ({ outcome, onTryThemes }) => (
-  <div className="flex gap-2.5 rounded-md border border-[#B44732]/40 bg-[#FAF6EE] p-3 text-sm text-[#182421]">
-    <AlertCircle size={16} className="mt-0.5 shrink-0 text-[#B44732]" />
-    <div className="min-w-0 space-y-1">
-      <p>{outcome.message}</p>
-      {outcome.error === 'resting' && (
-        <p className="text-xs text-[#5F6D61]">
-          Try again {outcome.retryAfterSeconds !== undefined ? describeRetryAfter(outcome.retryAfterSeconds) : 'later'}. The calendar, exports, and guides work as usual.
-        </p>
-      )}
-      {THEME_FALLBACK_ERRORS.has(outcome.error) && (
-        <button
-          type="button"
-          onClick={onTryThemes}
-          className="mt-1.5 min-h-11 rounded-md border border-[#D8D0BF] bg-[#FAF7F0] px-3 text-sm font-medium text-[#182421] transition hover:bg-[#EAE2D0]"
-        >
-          Try theme search instead (runs on this device)
-        </button>
-      )}
-    </div>
+  <div className="almanac-reveal space-y-1 text-center">
+    <p className="font-serif-almanac text-lg italic text-[#B44732]">{outcome.message}</p>
+    {outcome.error === 'resting' && (
+      <p className="text-[13px] text-[#6B6656]">
+        Try again {outcome.retryAfterSeconds !== undefined ? describeRetryAfter(outcome.retryAfterSeconds) : 'later'}. The calendar, exports, and guides work as usual.
+      </p>
+    )}
+    {THEME_FALLBACK_ERRORS.has(outcome.error) && (
+      <button
+        type="button"
+        onClick={onTryThemes}
+        className="min-h-11 font-serif-almanac text-[17px] italic text-[#182421] underline decoration-[#B89A62] underline-offset-4 hover:decoration-[#B44732]"
+      >
+        Seek a theme instead — it runs on this device
+      </button>
+    )}
   </div>
 );
