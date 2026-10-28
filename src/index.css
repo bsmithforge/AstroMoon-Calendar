@@ -31,6 +31,58 @@
   background-color: #182421;
 }
 
+/*
+ * Ask the Almanac scroll. The paper unrolls from the top rod (useUnroll in
+ * AlmanacScroll.tsx animates its height, pushing the bottom rod down), then
+ * the writing appears.
+ */
+.almanac-paper {
+  background:
+    radial-gradient(120% 90% at 50% 40%, #FBF7EE 0%, #F5EEDD 55%, #EADFC6 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(184, 154, 98, 0.35),
+    inset 0 18px 24px -18px rgba(70, 50, 20, 0.35),
+    inset 0 -18px 24px -18px rgba(70, 50, 20, 0.35);
+}
+
+.almanac-rod {
+  background: linear-gradient(to bottom, #D9C08A 0%, #B89A62 35%, #7E6436 80%, #5E4A27 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.almanac-reveal {
+  animation: almanac-fade-up 420ms ease-out both;
+}
+
+/* Ink spreading down the page: a gradient mask slides from hidden to shown. */
+.almanac-ink {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 66%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 34%, transparent 66%);
+  -webkit-mask-size: 100% 300%;
+  mask-size: 100% 300%;
+  animation: almanac-ink 1100ms ease-out both;
+}
+
+@keyframes almanac-fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes almanac-ink {
+  from { -webkit-mask-position: 0 100%; mask-position: 0 100%; }
+  to { -webkit-mask-position: 0 0; mask-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No animation at all: inline stagger delays would otherwise hold content hidden. */
+  .almanac-reveal,
+  .almanac-ink {
+    animation: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
 /* Explicit SVG & Lucide icon baseline rules to prevent collapsing, squishing, or distortion */
 svg,
 svg.lucide,
@@ -60,6 +112,12 @@ button {
   outline: 2px solid #F3EDDF;
   outline-offset: 3px;
   box-shadow: 0 0 0 5px #182421;
+}
+
+/* The scroll's prompt is a written line: focus thickens its ink rule instead of boxing it. */
+.almanac-prompt:focus-visible {
+  outline: none;
+  box-shadow: 0 2px 0 0 #182421;
 }
 
 @media print {
