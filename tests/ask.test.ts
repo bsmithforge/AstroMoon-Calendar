@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { askAlmanac, ASK_MAX_TOOL_CALLS_PER_ROUND, ASK_MAX_TOOL_ROUNDS, AskInput, findRawDateText } from '../server/ai/ask';
 import {
@@ -12,6 +13,7 @@ import {
   ToolCall,
 } from '../server/ai/provider';
 import { createAskHandler } from '../server/ask';
+import { ALMANAC_TOOL_SCHEMAS, runAlmanacTool } from '../src/utils/almanacTools';
 
 /**
  * Ask the Almanac against a scripted model: no network, no keys. Each step
@@ -349,4 +351,26 @@ test('the handler answers, or explains why it cannot', async () => {
   assert.equal((await slow.json()).error, 'timeout');
   const broken = await failing(new Error('bug'))(post({ question: 'hi' }));
   assert.equal(broken.status, 500);
+});
+
+// The live eval's question set, checked without a model.
+
+test('every eval question is well formed and its expected events resolve', () => {
+  const evalSet = JSON.parse(readFileSync(new URL('../evals/ask-questions.json', import.meta.url), 'utf8'));
+  const toolNames = ALMANAC_TOOL_SCHEMAS.map((s) => s.name as string);
+  const ids = evalSet.questions.map((q: { id: string }) => q.id);
+  assert.equal(new Set(ids).size, ids.length, 'question ids are unique');
+
+  for (const q of evalSet.questions) {
+    for (const tool of q.expectTools ?? []) assert.ok(toolNames.includes(tool), `${q.id}: unknown tool ${tool}`);
+    if (!q.expectCites) continue;
+    const result = runAlmanacTool(q.expectCites.tool, q.expectCites.args, {
+      timezone: q.timezone ?? evalSet.timezone,
+      hemisphere: q.hemisphere ?? evalSet.hemisphere,
+      now: new Date(evalSet.now),
+    });
+    assert.ok('records' in result, `${q.id}: ${'error' in result ? result.error : 'no records'}`);
+    const matching = q.expectCites.signs ? result.records.filter((r) => q.expectCites.signs.includes(r.sign.name)) : result.records;
+    assert.ok(matching.length > 0, `${q.id}: expects at least one event`);
+  }
 });
