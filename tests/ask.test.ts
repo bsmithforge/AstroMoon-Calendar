@@ -82,6 +82,47 @@ test('a grounded answer returns segments, cited engine events, and a trace', asy
   assert.deepEqual(toolResults(requests[1])[0].events[0].id, FULL_MOON);
 });
 
+test('an export request returns the validated draft alongside the answer', async () => {
+  const exportInput: AskInput = { question: 'Make me a printable calendar of next year’s full moons', timezone: 'UTC', hemisphere: 'northern' };
+  const { model, requests } = scripted([
+    tools(call('prepare_export', { format: 'calendar_pdf', months: 2 })),
+    tools(call('prepare_export', { format: 'calendar_pdf', year: 2027, include: ['moon_phases'] })),
+    say('I’ve prepared a printable calendar of the Moon phases. Review it below to download.'),
+  ]);
+  const result = await askAlmanac(exportInput, { model, now });
+
+  // The first call was invalid; the model saw why and fixed it.
+  assert.match(toolResults(requests[1])[0].error, /one way/);
+  assert.equal(result.source, 'model');
+  assert.deepEqual(result.events, []);
+  assert.deepEqual(result.exportDraft, {
+    format: 'calendar_pdf',
+    startDate: '2027-01-01',
+    endDate: '2027-12-31',
+    timezone: 'UTC',
+    hemisphere: 'northern',
+    includeMajorPhases: true,
+    includeIngresses: false,
+    includeDailySigns: false,
+    includeEclipses: false,
+  });
+  assert.deepEqual(result.trace.map((t) => [t.tool, t.ok]), [['prepare_export', false], ['prepare_export', true]]);
+  assert.equal(result.trace[1].detail, 'Calendar PDF · 2027-01-01 to 2027-12-31 · UTC');
+});
+
+test('a draft survives an answer that fails grounding', async () => {
+  const exportInput: AskInput = { question: 'Export next year as an ICS file', timezone: 'UTC', hemisphere: 'northern' };
+  const { model } = scripted([
+    tools(call('prepare_export', { format: 'ics', year: 2027 })),
+    say('Your 2027 calendar is ready.'),
+    say('Your calendar for January to December is ready.'),
+  ]);
+  const result = await askAlmanac(exportInput, { model, now });
+  assert.equal(result.source, 'fallback');
+  assert.deepEqual(result.segments, [{ type: 'text', text: 'Your export is ready to review below.' }]);
+  assert.equal(result.exportDraft?.format, 'ics');
+});
+
 test('several calls per round and several rounds can feed one answer', async () => {
   const { model, requests } = scripted([
     tools(

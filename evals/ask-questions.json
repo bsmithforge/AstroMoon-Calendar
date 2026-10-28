@@ -120,6 +120,18 @@
       "expectCites": { "tool": "find_moon_phases", "args": { "phases": ["Full Moon"], "limit": 1 } }
     },
     {
+      "id": "export-printable-next-year",
+      "question": "Make me a printable calendar of next year's full and new moons.",
+      "expectTools": ["prepare_export"],
+      "expectText": "review|download|export"
+    },
+    {
+      "id": "export-ics-tokyo",
+      "question": "I want an .ics file with the eclipses over the next two years, in Tokyo time.",
+      "expectTools": ["prepare_export"],
+      "expectText": "review|download|export"
+    },
+    {
       "id": "unsupported-void-of-course",
       "question": "When is the Moon next void of course?",
       "expectText": "can't|cannot|not|only|isn't"
