@@ -28,8 +28,18 @@ interface AskModalProps {
   onExchange: (exchange: AskExchange) => void;
   onOpenEvent: (event: EventView) => void;
   onReviewExport: (draft: ExportDraft) => void;
+  /** Opens a calendar date from theme search. */
+  onOpenDate: (dateString: string) => void;
   onClose: () => void;
 }
+
+// Theme search is its own chunk. It is loaded by hand rather than with
+// React.lazy, whose failed import (offline, or after a deploy renames chunks)
+// would unmount the whole app without an error boundary.
+type ThemePanelComponent = typeof import('./ThemeSearchPanel').default;
+const loadThemePanel = () => import('./ThemeSearchPanel').then((module) => module.default);
+
+type AskTab = 'ask' | 'themes';
 
 const EXAMPLE_QUESTIONS = [
   'When is the next full moon?',
@@ -60,8 +70,11 @@ const AskModalContent: React.FC<AskModalProps> = ({
   onExchange,
   onOpenEvent,
   onReviewExport,
+  onOpenDate,
   onClose,
 }) => {
+  const [tab, setTab] = useState<AskTab>('ask');
+  const [ThemePanel, setThemePanel] = useState<ThemePanelComponent | 'failed' | null>(null);
   const [question, setQuestion] = useState('');
   const [pending, setPending] = useState<string | null>(null);
   const [exchange, setExchange] = useState<AskExchange | null>(lastExchange);
@@ -84,7 +97,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
       if (event.key === 'Escape') closeRef.current();
       if (event.key !== 'Tab') return;
       const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), textarea:not(:disabled), summary, a[href]'
+        'button:not(:disabled), textarea:not(:disabled), input:not(:disabled), summary, a[href]'
       ) || []).filter((el) => el.tabIndex >= 0);
       const first = controls[0];
       const last = controls[controls.length - 1];
@@ -107,6 +120,19 @@ const AskModalContent: React.FC<AskModalProps> = ({
       previousFocus?.focus();
     };
   }, []);
+
+  // Fetch the theme search chunk when the dialog opens (it is small), so the tab
+  // opens at once and still works if the connection drops afterwards.
+  useEffect(() => {
+    if (ThemePanel) return;
+    let cancelled = false;
+    loadThemePanel()
+      .then((component) => { if (!cancelled) setThemePanel(() => component); })
+      .catch(() => { if (!cancelled && tab === 'themes') setThemePanel('failed'); });
+    return () => {
+      cancelled = true;
+    };
+  }, [ThemePanel, tab]);
 
   // Grow the input with its text, up to its max height.
   useEffect(() => {
@@ -179,7 +205,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
                 Ask the Almanac
               </h3>
               <p className="mt-0.5 text-xs text-[#D8D0BF]">
-                AI answers, dated by the almanac
+                {tab === 'ask' ? 'AI answers, dated by the almanac' : 'Private theme search, on this device'}
               </p>
             </div>
           </div>
@@ -194,6 +220,44 @@ const AskModalContent: React.FC<AskModalProps> = ({
           </button>
         </div>
 
+        <div role="tablist" aria-label="Ask or search themes" className="grid shrink-0 grid-cols-2 border-b border-[#D8D0BF] bg-[#EBE3D0] text-sm">
+          {([['ask', 'Ask'], ['themes', 'Theme search']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              id={`ask-tab-${value}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === value}
+              aria-controls={`ask-panel-${value}`}
+              onClick={() => setTab(value)}
+              className={`min-h-11 px-3 font-medium transition ${
+                tab === value
+                  ? 'bg-[#FAF7F0] text-[#182421] shadow-[inset_0_-2px_0_#B89A62]'
+                  : 'text-[#5F6D61] hover:bg-[#F3EDDF] hover:text-[#182421]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'themes' ? (
+          <div id="ask-panel-themes" role="tabpanel" aria-labelledby="ask-tab-themes" className="flex min-h-0 flex-1 flex-col">
+            {ThemePanel === 'failed' ? (
+              <div className="flex-1 space-y-3 p-6 text-sm text-[#182421]">
+                <p>Theme search couldn’t load. Check your connection.</p>
+                <button type="button" onClick={() => setThemePanel(null)} className="min-h-11 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] px-3 font-medium hover:bg-[#EAE2D0]">
+                  Try again
+                </button>
+              </div>
+            ) : ThemePanel ? (
+              <ThemePanel timezone={timezone} hemisphere={hemisphere} onOpenDate={onOpenDate} />
+            ) : (
+              <p className="flex-1 p-6 text-sm text-[#5F6D61]">Loading theme search…</p>
+            )}
+          </div>
+        ) : (
+        <div id="ask-panel-ask" role="tabpanel" aria-labelledby="ask-tab-ask" className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-4 sm:p-6">
           <div>
             {/* Always mounted so screen readers announce answers; spaced only once it has one. */}
@@ -212,7 +276,7 @@ const AskModalContent: React.FC<AskModalProps> = ({
                   {'result' in exchange.outcome ? (
                     <Answer result={exchange.outcome.result} onOpenEvent={onOpenEvent} onReviewExport={onReviewExport} />
                   ) : (
-                    <AskError outcome={exchange.outcome} />
+                    <AskError outcome={exchange.outcome} onTryThemes={() => setTab('themes')} />
                   )}
                 </div>
               ) : null}
@@ -280,6 +344,8 @@ const AskModalContent: React.FC<AskModalProps> = ({
             )}
           </p>
         </form>
+        </div>
+        )}
       </div>
     </div>
   );
@@ -446,7 +512,10 @@ const HowAnswered: React.FC<{ result: AskResult }> = ({ result }) => {
   );
 };
 
-const AskError: React.FC<{ outcome: Extract<AskOutcome, { ok: false }> }> = ({ outcome }) => (
+// Errors where the question itself is fine, so on-device theme search is a real alternative.
+const THEME_FALLBACK_ERRORS = new Set(['not_configured', 'resting', 'timeout', 'unavailable', 'internal', 'network']);
+
+const AskError: React.FC<{ outcome: Extract<AskOutcome, { ok: false }>; onTryThemes: () => void }> = ({ outcome, onTryThemes }) => (
   <div className="flex gap-2.5 rounded-md border border-[#B44732]/40 bg-[#FAF6EE] p-3 text-sm text-[#182421]">
     <AlertCircle size={16} className="mt-0.5 shrink-0 text-[#B44732]" />
     <div className="min-w-0 space-y-1">
@@ -455,6 +524,15 @@ const AskError: React.FC<{ outcome: Extract<AskOutcome, { ok: false }> }> = ({ o
         <p className="text-xs text-[#5F6D61]">
           Try again {outcome.retryAfterSeconds !== undefined ? describeRetryAfter(outcome.retryAfterSeconds) : 'later'}. The calendar, exports, and guides work as usual.
         </p>
+      )}
+      {THEME_FALLBACK_ERRORS.has(outcome.error) && (
+        <button
+          type="button"
+          onClick={onTryThemes}
+          className="mt-1.5 min-h-11 rounded-md border border-[#D8D0BF] bg-[#FAF7F0] px-3 text-sm font-medium text-[#182421] transition hover:bg-[#EAE2D0]"
+        >
+          Try theme search instead (runs on this device)
+        </button>
       )}
     </div>
   </div>

@@ -136,9 +136,15 @@ export function App() {
   // instant decides the day (it may have been asked about in another zone);
   // noon snapshots and all-day events keep their date.
   const handleOpenAskEvent = (event: EventView) => {
-    const dateString = event.utcTime && !event.isAllDay
-      ? getLocalDateComponents(new Date(event.utcTime), filters.timezone).dateString
-      : event.localDateString;
+    handleOpenDate(
+      event.utcTime && !event.isAllDay
+        ? getLocalDateComponents(new Date(event.utcTime), filters.timezone).dateString
+        : event.localDateString
+    );
+  };
+
+  // Close Ask, move the calendar to the date's month, and open that day.
+  const handleOpenDate = (dateString: string) => {
     const [year, month] = dateString.split('-').map(Number);
     const { days } = generateRangeDataset(dateString, dateString, filters.hemisphere, filters.timezone);
     setIsAskModalOpen(false);
@@ -447,6 +453,7 @@ export function App() {
         onExchange={setLastAskExchange}
         onOpenEvent={handleOpenAskEvent}
         onReviewExport={handleReviewExport}
+        onOpenDate={handleOpenDate}
         onClose={() => setIsAskModalOpen(false)}
       />
     </div>
