@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const entries = ['calendar'];
+const entries = ['calendar', 'ask'];
 
 await build({
   entryPoints: entries.map((name) => path.join(root, `server/${name}.ts`)),

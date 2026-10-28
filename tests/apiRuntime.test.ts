@@ -30,7 +30,23 @@ const entries: Record<string, { script: string; expected: unknown }> = {
       head: 200,
     },
   },
+  // Runs with no AI_* variables, so the unconfigured path must answer cleanly.
+  ask: {
+    script: `
+      const res = await mod.POST(new Request('https://astromoon.ca/api/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question: 'When is the next full moon?', timezone: 'UTC', hemisphere: 'northern' }),
+      }));
+      const body = await res.json();
+      console.log(JSON.stringify({ status: res.status, error: body.error, get: mod.GET(new Request('https://astromoon.ca/api/ask')).status }));
+    `,
+    expected: { status: 503, error: 'not_configured', get: 405 },
+  },
 };
+
+// Entries run without provider settings, whatever the developer's shell has set.
+const envWithoutAi = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('AI_')));
 
 test('every api/ entry has a runtime smoke test', () => {
   const apiFiles = readdirSync(path.join(root, 'api')).filter((file) => file.endsWith('.js'));
@@ -44,7 +60,7 @@ test('api/ entries run as plain Node ESM after the API build', () => {
     const output = execFileSync(
       process.execPath,
       ['--input-type=module', '-e', `const mod = await import('./api/${name}.js');\n${script}`],
-      { cwd: root, stdio: 'pipe' }
+      { cwd: root, stdio: 'pipe', env: envWithoutAi }
     ).toString();
     assert.deepEqual(JSON.parse(output.trim()), expected, name);
 

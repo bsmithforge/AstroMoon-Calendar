@@ -16,6 +16,8 @@ import {
   getLocalDateComponents,
   getLocalDateRangeUtc,
   getQuartersInRange,
+  MOON_PHASE_MEANINGS,
+  MoonPhaseName,
 } from './astronomy';
 import { countInclusiveDays, getDateRangeError, isValidIsoDate, RECORD_EXPORT_MAX_DAYS } from './dateRange';
 import { isValidTimeZone } from './subscription';
@@ -35,12 +37,14 @@ const ECLIPSE_TYPES = ['solar', 'lunar'] as const;
 const ECLIPSE_KINDS = ['total', 'partial', 'annular', 'penumbral'] as const;
 const ORDERS = ['earliest', 'latest'] as const;
 const SIGN_NAMES = ZODIAC_SIGNS.map((sign) => sign.name);
+const PHASE_NAMES = Object.keys(MOON_PHASE_MEANINGS) as MoonPhaseName[];
 
 export type AlmanacToolName =
   | 'find_moon_phases'
   | 'find_sign_ingresses'
   | 'find_eclipses'
-  | 'get_moon_on_date';
+  | 'get_moon_on_date'
+  | 'get_traditional_meaning';
 
 /** The user's settings, which tools fall back to when arguments are omitted. */
 export interface AlmanacContext {
@@ -57,18 +61,41 @@ export interface AlmanacToolSchema {
   parameters: Record<string, unknown>;
 }
 
-export type AlmanacToolResult =
+export interface AlmanacRecordsResult {
+  ok: true;
+  tool: AlmanacToolName;
+  timezone: string;
+  startDate: string;
+  endDate: string;
+  /** Matching events before `limit` was applied. */
+  total: number;
+  truncated: boolean;
+  records: AstroRecord[];
+}
+
+/** The app's own traditional interpretation copy, as shown in the zodiac guide and exports. */
+export type Interpretation =
   | {
-      ok: true;
-      tool: AlmanacToolName;
-      timezone: string;
-      startDate: string;
-      endDate: string;
-      /** Matching events before `limit` was applied. */
-      total: number;
-      truncated: boolean;
-      records: AstroRecord[];
+      kind: 'sign';
+      name: string;
+      element: string;
+      modality: string;
+      ruler: string;
+      theme: string;
+      description: string;
+      activities: string[];
     }
+  | { kind: 'phase'; name: MoonPhaseName; meaning: string };
+
+export interface AlmanacInterpretationResult {
+  ok: true;
+  tool: 'get_traditional_meaning';
+  interpretations: Interpretation[];
+}
+
+export type AlmanacToolResult =
+  | AlmanacRecordsResult
+  | AlmanacInterpretationResult
   | { ok: false; tool: string; error: string };
 
 const rangeParameters = {
@@ -160,6 +187,19 @@ export const ALMANAC_TOOL_SCHEMAS: AlmanacToolSchema[] = [
       properties: {
         date: { type: 'string', description: 'Local date, YYYY-MM-DD. Defaults to today.' },
         timezone: rangeParameters.timezone,
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'get_traditional_meaning',
+    description:
+      "Get AstroMoon's traditional astrological interpretation of a zodiac sign, a Moon phase, or both. Use this instead of your own knowledge for meanings.",
+    parameters: {
+      type: 'object',
+      properties: {
+        sign: { type: 'string', enum: SIGN_NAMES, description: 'Tropical zodiac sign.' },
+        phase: { type: 'string', enum: PHASE_NAMES, description: 'One of the eight Moon phase categories.' },
       },
       additionalProperties: false,
     },
@@ -352,6 +392,31 @@ const TOOLS: Record<AlmanacToolName, (args: Args, ctx: AlmanacContext) => Almana
       truncated: false,
       records,
     };
+  },
+
+  get_traditional_meaning(args) {
+    const signName = optionalChoice(args, 'sign', SIGN_NAMES);
+    const phaseName = optionalChoice(args, 'phase', PHASE_NAMES);
+    if (!signName && !phaseName) throw new ToolArgumentError('Provide a sign, a phase, or both.');
+
+    const interpretations: Interpretation[] = [];
+    if (signName) {
+      const sign = ZODIAC_SIGNS.find((s) => s.name === signName)!;
+      interpretations.push({
+        kind: 'sign',
+        name: sign.name,
+        element: sign.element,
+        modality: sign.modality,
+        ruler: sign.ruler,
+        theme: sign.theme,
+        description: sign.description,
+        activities: sign.activities,
+      });
+    }
+    if (phaseName) {
+      interpretations.push({ kind: 'phase', name: phaseName, meaning: MOON_PHASE_MEANINGS[phaseName] });
+    }
+    return { ok: true, tool: 'get_traditional_meaning', interpretations };
   },
 };
 

@@ -64,7 +64,7 @@ Hobby doesn't bill for overages. Going over its usage limits can pause the proje
 
 ### Privacy
 
-- **Ask:** questions go to the configured provider, and the Ask dialog says which one. Some free tiers may use prompts to improve their products, so the provider comparison records each candidate's terms.
+- **Ask:** questions go to the configured provider, and the Ask dialog says which one. Some free tiers may use prompts to improve their products, so the provider comparison records each candidate's terms. Groq, the primary provider, doesn't train on prompts. Turn on its Zero Data Retention setting for the production key. The Gemini fallback's free tier may use prompts and may not serve the EEA, UK or Switzerland, so it is skipped for requests from those countries.
 - **No personal data:** the app doesn't request or store any.
 - **Theme search:** sends nothing anywhere. The model files are downloaded once from Hugging Face's CDN and then cached by the browser.
 
@@ -164,36 +164,37 @@ This builds and tests the tools the model will call before any model is involved
 
 ### Phase 3: Ask endpoint (`ai/03-ask-endpoint`)
 
-1. `Add OpenAI-compatible chat client`. Add `server/ai/provider.ts`, a `fetch`-based client configured by `AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY` and optional `AI_FALLBACK_*` variables. It applies a timeout and maps 429 and 5xx responses to typed errors.
-2. `Add Ask system prompt`. Add `server/ai/prompt.ts`, committed with comments. It covers:
+1. `Add traditional interpretation lookup tool` (added during the phase). `get_traditional_meaning({ sign?, phase? })` returns the app's own sign and phase copy, so answers about meanings quote AstroMoon rather than the model's general knowledge.
+2. `Add OpenAI-compatible chat client`. Add `server/ai/provider.ts`, a `fetch`-based client configured by `AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY` and optional `AI_FALLBACK_*` variables. It applies a timeout and maps 429 (with `Retry-After`), 401/403/404, 5xx, network and malformed responses to typed errors. Any provider failure hands the request to the fallback.
+3. `Add Ask system prompt`. Add `server/ai/prompt.ts`, committed with comments. It covers:
    - scope: the Moon, the zodiac, eclipses and this app
+   - tools for every fact, and `get_traditional_meaning` for meanings
    - the rule that events are cited as tokens, never written as dates
-   - labeling astrology as traditional interpretation
-   - declining off-topic requests briefly
-3. `Add tool loop and grounding guard`. Add `server/ai/ask.ts`, which:
-   - runs up to 4 tool rounds
+   - noon-snapshot and global-peak semantics
+   - declining off-topic requests briefly, in at most 120 words
+4. `Add tool loop and grounding guard`. Add `server/ai/ask.ts`, which:
+   - runs up to 4 tool rounds of up to 4 calls each, within a 25-second budget
    - checks that every cited token matches a record a tool returned
-   - detects raw dates and times in the answer, retries once with a correction, then falls back to a template
+   - detects dates, times, years, months and weekdays the model wrote itself (ones the user typed are allowed), retries once with a correction, then falls back to a list of the tool results
 
-   It returns `{ segments, events, trace, model }`.
-4. `Add /api/ask handler`. Add `server/ask.ts`, which:
-   - accepts POST with JSON only, within size limits, and sends `Cache-Control: no-store`
+   It returns `{ segments, events, trace, model, source, corrections }`.
+5. `Add /api/ask handler`. Add `server/ask.ts`, which:
+   - accepts POST with JSON only (4 KB body, 400-character question) and sends `Cache-Control: no-store`
    - returns 503 `not_configured` when no key is set
-   - returns 503 `resting` with `Retry-After` when the quota is used up
+   - returns 503 `resting` with `Retry-After` when the quota is used up, and 503 `timeout` or `unavailable` for other provider failures
 
    This commit also adds:
    - the `api/ask.js` entry
-   - a Vite dev route that reads `.env.local` on the server
+   - a Vite dev route that reads `AI_*` from `.env.local` into server-side `process.env` only
    - `.env.example`, plus a `!.env.example` exception in `.gitignore`
-5. `Test the ask loop with a scripted fake model`. These are deterministic tests that run in CI, covering:
-   - multi-round tool calls and bad tool arguments
-   - invented IDs and answers containing raw dates
-   - the retry followed by the fallback
-   - quota and timeout errors, oversized input and the wrong HTTP method
-
-   The runtime test also covers the bundled `api/ask.js`.
-6. `Add live eval script and question set`. Add `evals/ask-questions.json` with 20–30 questions anchored to a fixed date. Each question lists the tools and arguments it expects, plus the record IDs the engine produces for it. `scripts/eval-ask.mjs` runs the set by hand with a key and never runs in CI. It reports how often the right tool was chosen, grounding failures and latency.
-7. `Record provider comparison`. Run the eval against 2–3 free providers. Commit `docs/ai-evals.md` with the results, the limits observed and each provider's data-use terms. Choose a primary and a fallback, and update the decision log.
+6. `Report written dates in text order, without fragments` (found by the tests in the next commit).
+7. `Test the ask loop with a scripted fake model`. 18 deterministic tests that run in CI, covering the loop, the provider client and the handler.
+8. `Add live eval script and question set`. `evals/ask-questions.json` has 20 questions anchored to a fixed clock. Each may name the tools it expects and a deterministic tool call whose events the answer must cite; expected events are computed by the real tools at eval time. `npm run eval:ask` runs the set by hand with a key and never runs in CI. It reports tool choice, citations, expected text, grounding passes, corrections, provider errors and latency. A CI test checks the question set itself.
+9. Fixes from the live eval:
+   - `Let Ask repeat years and months the user typed`
+   - `Include the provider's error code in provider errors`
+   - `Skip a provider in countries its terms exclude`, which adds `AI_<prefix>EXCLUDED_COUNTRIES`, read against Vercel's `x-vercel-ip-country` header and failing closed when the country is unknown
+10. `Record provider comparison`. [`docs/ai-evals.md`](ai-evals.md) compares Groq and Gemini: results, observed limits, data-use terms, and the choice of Groq as primary with Gemini as a region-limited fallback.
 
 **Verify:** lint, test and build; `curl` against the local dev server; after merging, the `dev` preview with its branch-scoped key.
 
@@ -203,8 +204,8 @@ This builds and tests the tools the model will call before any model is involved
 2. `Add Ask dialog`. Add `src/components/AskModal.tsx`:
    - same focus trap, Escape handling and scroll lock as the existing modals
    - example questions, and answers rendered from segments
-   - event chips showing engine-computed times with a timezone label
-   - a "How this was answered" disclosure and a note about AI and privacy
+   - event chips showing the event's title and its engine-computed time with a timezone label (models use tokens as noun phrases, so a bare date doesn't read; see [ai-evals.md](ai-evals.md))
+   - a "How this was answered" disclosure and a note about AI and privacy that names the providers and asks users not to include personal information
    - states for loading, unavailable, resting and error
 3. `Open days from answers`. Tapping a chip moves the calendar to that month and opens `DayDetailModal` for the date, using the app's timezone.
 4. `Add Ask to the header`. Add a new action that collapses to a 44 px icon-only button below `sm`, like Share, Subscribe and Export. Check that the header still fits at 320 px.
@@ -289,4 +290,6 @@ This builds and tests the tools the model will call before any model is involved
 | 2026-10-27 | v1 handles single questions, not multi-turn chat. | Saves free quota and keeps requests stateless. |
 | 2026-10-27 | Embed the theme corpus in the browser, not at build time. | Avoids committing generated vectors or downloading the model in CI. Revisit if it takes more than 3 s on a mid-range phone. |
 | 2026-10-27 | Phase branches merge into `dev`, and `dev` reaches `main` through release PRs. | Merged phases are tested together on a stable preview, with a live key and on real devices, before production. |
-| Pending | Choice of primary and fallback provider | To be decided by the Phase 3 provider comparison. |
+| 2026-10-27 | Add a `get_traditional_meaning` tool. | Without it, questions about meanings would be answered from the model's general knowledge instead of the app's own copy. |
+| 2026-10-27 | Allow years and month names in answers only when the user typed them. | Restating the user's "2027" is harmless, but a model-written year or month can be wrong, so it fails the grounding check. |
+| 2026-10-28 | Primary: Groq `openai/gpt-oss-120b`. Fallback: Gemini `gemini-3.5-flash-lite`, never used for requests from the EEA, UK or Switzerland or from an unknown country. | Both passed grounding on 20/20 eval answers. Groq doesn't train on prompts and has no regional restriction. Gemini's free tier may use prompts to improve its products and may not be offered in those regions. See [ai-evals.md](ai-evals.md). |

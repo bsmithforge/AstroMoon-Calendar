@@ -27,6 +27,7 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
+    "eval:ask": "node --import tsx scripts/eval-ask.ts",
     "clean": "rm -rf dist server/dist"
   },
   "dependencies": {
