@@ -76,7 +76,7 @@ const RAW_DATE_PATTERNS = [
   /\b\d{4}-\d{1,2}-\d{1,2}\b/g,
   /\b\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\b/g,
   /\b\d{1,2}:\d{2}\b/g,
-  /\b\d{1,2}\s?(?:a\.?m\.?|p\.?m\.?)(?![a-z])/gi,
+  /\b\d{1,2}(?::\d{2})?\s?(?:a\.?m\.?|p\.?m\.?)(?![a-z])/gi,
   /\b(?:19|20)\d{2}\b/g,
   new RegExp(`\\b(?:${MONTHS})\\b`, 'gi'),
   new RegExp(`\\b(?:${MONTHS_SHORT})\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b`, 'gi'),
@@ -84,16 +84,22 @@ const RAW_DATE_PATTERNS = [
   new RegExp(`\\b(?:${WEEKDAYS})\\b`, 'gi'),
 ];
 
-/** Date-like text the model wrote itself, ignoring anything the user also typed. */
+/** Date-like text the model wrote itself, in text order, ignoring anything the user also typed. */
 export function findRawDateText(text: string, question: string): string[] {
   const asked = question.toLowerCase();
-  const found = new Set<string>();
-  for (const pattern of RAW_DATE_PATTERNS) {
-    for (const match of text.matchAll(pattern)) {
-      if (!asked.includes(match[0].toLowerCase())) found.add(match[0]);
-    }
+  const spans = RAW_DATE_PATTERNS.flatMap((pattern) =>
+    [...text.matchAll(pattern)].map((match) => ({ start: match.index!, end: match.index! + match[0].length, text: match[0] }))
+  ).sort((a, b) => a.start - b.start || b.end - a.end);
+
+  const found: string[] = [];
+  let coveredUntil = -1;
+  for (const span of spans) {
+    // Skip pieces of a longer match, e.g. the year inside 2026-11-24.
+    if (span.end <= coveredUntil) continue;
+    coveredUntil = span.end;
+    if (!asked.includes(span.text.toLowerCase()) && !found.includes(span.text)) found.push(span.text);
   }
-  return [...found];
+  return found;
 }
 
 type GroundingCheck =
