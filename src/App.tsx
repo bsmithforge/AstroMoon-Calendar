@@ -16,7 +16,9 @@ import { ExportModal } from './components/ExportModal';
 import { SubscribeModal } from './components/SubscribeModal';
 import { ZodiacGuideModal } from './components/ZodiacGuideModal';
 import { MethodologyModal } from './components/MethodologyModal';
-import { generateMonthData, generateRangeDataset } from './utils/astronomy';
+import { AskExchange, AskModal } from './components/AskModal';
+import { generateMonthData, generateRangeDataset, getLocalDateComponents } from './utils/astronomy';
+import { EventView } from './utils/almanacResults';
 import { ArrowUpRight, Rss, ShieldCheck, Sparkles } from 'lucide-react';
 
 function getPresetRange(year: number, month: number, preset: CalendarViewMode) {
@@ -82,6 +84,8 @@ export function App() {
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState<boolean>(false);
   const [isZodiacGuideOpen, setIsZodiacGuideOpen] = useState<boolean>(false);
   const [isMethodologyModalOpen, setIsMethodologyModalOpen] = useState<boolean>(false);
+  const [isAskModalOpen, setIsAskModalOpen] = useState<boolean>(false);
+  const [lastAskExchange, setLastAskExchange] = useState<AskExchange | null>(null);
 
   // Synchronized filter updater
   const handleFilterChange = (newFilters: Partial<FilterSettings>) => {
@@ -123,6 +127,20 @@ export function App() {
   // Switch views
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
+  };
+
+  // Open the day an Ask answer cites, in the app's timezone: a timed event's
+  // instant decides the day (it may have been asked about in another zone);
+  // noon snapshots and all-day events keep their date.
+  const handleOpenAskEvent = (event: EventView) => {
+    const dateString = event.utcTime && !event.isAllDay
+      ? getLocalDateComponents(new Date(event.utcTime), filters.timezone).dateString
+      : event.localDateString;
+    const [year, month] = dateString.split('-').map(Number);
+    const { days } = generateRangeDataset(dateString, dateString, filters.hemisphere, filters.timezone);
+    setIsAskModalOpen(false);
+    handleMonthChange(year, month - 1);
+    if (days[0]) setSelectedDay(days[0]);
   };
 
   // Monthly calendar dataset computed with astronomy-engine
@@ -209,6 +227,7 @@ export function App() {
         onOpenSubscribeModal={() => setIsSubscribeModalOpen(true)}
         onOpenInfoModal={() => setIsZodiacGuideOpen(true)}
         onOpenMethodologyModal={() => setIsMethodologyModalOpen(true)}
+        onOpenAskModal={() => setIsAskModalOpen(true)}
       />
 
       {/* Control Panel: Navigation, Filters, Hemisphere, Display Toggles, Timezone */}
@@ -405,6 +424,16 @@ export function App() {
       <MethodologyModal
         isOpen={isMethodologyModalOpen}
         onClose={() => setIsMethodologyModalOpen(false)}
+      />
+
+      <AskModal
+        isOpen={isAskModalOpen}
+        timezone={filters.timezone}
+        hemisphere={filters.hemisphere}
+        lastExchange={lastAskExchange}
+        onExchange={setLastAskExchange}
+        onOpenEvent={handleOpenAskEvent}
+        onClose={() => setIsAskModalOpen(false)}
       />
     </div>
   );

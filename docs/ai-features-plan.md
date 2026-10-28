@@ -200,19 +200,26 @@ This builds and tests the tools the model will call before any model is involved
 
 ### Phase 4: Ask UI (`ai/04-ask-ui`)
 
-1. `Add ask client and response types`. Add `src/utils/askClient.ts`.
+As built:
+
+1. `Add ask client and response types`. Add `src/utils/askClient.ts`:
+   - `askTheAlmanac()` turns every failure, including a missing function (404) or an HTML error page, into an error code and a message written for people
+   - `describeEventTime()` formats each cited event from its event view, in the event's own timezone
+   - the response types move here from `server/ai/ask.ts`, which imports them as types only
 2. `Add Ask dialog`. Add `src/components/AskModal.tsx`:
-   - same focus trap, Escape handling and scroll lock as the existing modals
+   - same mount-on-open, focus trap, Escape handling and scroll lock as `SubscribeModal`
+   - the input sits in a footer outside the scrolling answer
    - example questions, and answers rendered from segments
    - event chips showing the event's title and its engine-computed time with a timezone label (models use tokens as noun phrases, so a bare date doesn't read; see [ai-evals.md](ai-evals.md))
-   - a "How this was answered" disclosure and a note about AI and privacy that names the providers and asks users not to include personal information
-   - states for loading, unavailable, resting and error
-3. `Open days from answers`. Tapping a chip moves the calendar to that month and opens `DayDetailModal` for the date, using the app's timezone.
-4. `Add Ask to the header`. Add a new action that collapses to a 44 px icon-only button below `sm`, like Share, Subscribe and Export. Check that the header still fits at 320 px.
+   - a "How this was answered" disclosure listing the tool calls, the grounding result and the model
+   - a privacy note that names the providers and asks users not to include personal information
+   - states for loading, not configured, resting (with the retry time), timeout, unavailable and network errors
+3. `Open days from answers`. Tapping a chip closes the dialog, moves the calendar to that month and opens `DayDetailModal` in the app's timezone. A timed event's instant decides the day. App keeps the last question and answer, so reopening Ask shows them.
+4. `Add Ask to the header`. The Ask button sits beside the live Moon reading, labeled at every width, instead of in the Share/Subscribe/Export group. At 320 px that group already fills the row beside the logo.
 5. `Mobile pass for Ask`:
-   - the input stays reachable with the on-screen keyboard open (`dvh` units or the visual viewport API)
-   - safe-area insets and landscape
-   - long answers scroll inside the dialog
+   - the overlay follows the visual viewport while a keyboard covers part of the window
+   - chips are inline links to the event's month, because buttons render as inline blocks and broke the line
+   - shorter copy where it wrapped at 320–390 px
 
 **Verify:**
 - widths of 320, 375/390 and 430 px, a tablet and desktop, in portrait and landscape

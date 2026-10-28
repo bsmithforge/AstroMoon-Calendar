@@ -15,6 +15,7 @@ import { Hemisphere } from '../../src/types';
 import { EventView, toEventView, toModelResult } from '../../src/utils/almanacResults';
 import { ALMANAC_TOOL_SCHEMAS, AlmanacContext, runAlmanacTool } from '../../src/utils/almanacTools';
 import { getLocalDateComponents } from '../../src/utils/astronomy';
+import type { AnswerSegment, AskResult, TraceEntry } from '../../src/utils/askClient';
 import { buildCorrectionMessage, buildSystemPrompt } from './prompt';
 import { ChatMessage, ChatModel, ChatTool, ProviderError, ToolCall } from './provider';
 
@@ -39,27 +40,8 @@ export interface AskOptions {
   callTimeoutMs?: number;
 }
 
-export type AnswerSegment = { type: 'text'; text: string } | { type: 'event'; id: string };
-
-/** One tool call, shown under "How this was answered". */
-export interface TraceEntry {
-  tool: string;
-  arguments: unknown;
-  ok: boolean;
-  detail: string;
-}
-
-export interface AskResult {
-  segments: AnswerSegment[];
-  /** Events the answer cites, in first-citation order. */
-  events: EventView[];
-  trace: TraceEntry[];
-  model: string | null;
-  /** 'model' if the model's answer passed the grounding check; 'fallback' if the reply lists tool results instead. */
-  source: 'model' | 'fallback';
-  /** How many times the model's answer was sent back for correction (0 or 1). */
-  corrections: number;
-}
+// The response types are shared with the browser client, which defines them.
+export type { AnswerSegment, AskResult, TraceEntry } from '../../src/utils/askClient';
 
 const TOOLS: ChatTool[] = ALMANAC_TOOL_SCHEMAS.map(({ name, description, parameters }) => ({
   type: 'function',

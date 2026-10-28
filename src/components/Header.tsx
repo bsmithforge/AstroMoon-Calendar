@@ -6,6 +6,7 @@ import {
   Grid2X2,
   BookOpen,
   ChevronDown,
+  Feather,
   Sparkles,
   List,
   ShieldCheck,
@@ -25,6 +26,7 @@ interface HeaderProps {
   onOpenSubscribeModal: () => void;
   onOpenInfoModal: () => void;
   onOpenMethodologyModal: () => void;
+  onOpenAskModal: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSubscribeModal,
   onOpenInfoModal,
   onOpenMethodologyModal,
+  onOpenAskModal,
 }) => {
   const learnMenuRef = useRef<HTMLDetailsElement>(null);
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
@@ -156,8 +159,10 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
+          {/* Ask sits beside the live Moon rather than in the action group, which is full at 320px. */}
+          <div className="col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex min-w-0 items-stretch gap-2">
           <div
-            className="col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 flex min-h-10 min-w-0 flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-md border border-[#B89A62]/35 bg-[#101C19]/55 px-3 py-1.5 text-[13px] text-[#D8D0BF]"
+            className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-md border border-[#B89A62]/35 bg-[#101C19]/55 px-3 py-1.5 text-[13px] text-[#D8D0BF]"
           >
             <span className="sr-only">Current Moon: {liveMoon.phase.name}, {Math.round(liveMoon.phase.fraction * 100)} percent illuminated, Moon in {liveMoon.sign.name} at {liveMoon.degrees} degrees {liveMoon.minutes} minutes. Geocentric longitude {liveMoon.lon.toFixed(2)} degrees.</span>
             <span aria-hidden="true" className="text-[#B89A62] text-[10px] font-semibold uppercase tracking-[0.16em]">Now</span>
@@ -171,6 +176,11 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-[#B89A62]">{liveMoon.sign.symbol}</span>
               <span>{liveMoon.sign.name} {liveMoon.degrees}°{liveMoon.minutes}'</span>
             </span>
+          </div>
+          <button id="open-ask-btn" type="button" aria-label="Ask the Almanac a question" onClick={onOpenAskModal}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-md bg-[#B89A62] px-3 text-sm font-semibold text-[#182421] shadow-sm transition hover:bg-[#C9AE7A] active:scale-[0.98]">
+            <Feather size={17} /><span>Ask</span>
+          </button>
           </div>
         </div>
 
