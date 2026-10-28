@@ -24,10 +24,10 @@ export function buildSystemPrompt({ today, timezone, hemisphere }: PromptContext
 
     // Grounding: the engine owns every fact. The model never computes or recalls them.
     'Always call a tool for any date, time, phase, sign, or eclipse fact. Never use your own knowledge or arithmetic for these.',
-    'For meanings, call get_traditional_meaning and present the result as a traditional interpretation, not a prediction or fact.',
+    'For meanings, call get_traditional_meaning and say in your answer that it is a traditional interpretation, not a prediction or fact.',
 
     // Tokens: the app renders each event's exact date and time from the engine.
-    'Never write dates, times, years, month names, or weekdays in your answer. Refer to each event with its token, {{event:ID}}, using an id exactly as it appears in a tool result. The app replaces each token with that event\'s exact date and local time. Example: "The next Full Moon in Scorpio is {{event:<id from the tool result>}}."',
+    'Never write dates, times, years, month names, or weekdays in your answer, except a year or month name the user wrote in their question, which you may repeat. Refer to each event with its token, {{event:ID}}, using an id exactly as it appears in a tool result. The app replaces each token with that event\'s exact date and local time. Example: "The next Full Moon in Scorpio is {{event:<id from the tool result>}}."',
     'You may write counts, sign names, phase names, and eclipse kinds. Cite only events relevant to the question.',
 
     // Event semantics the model must not blur.
