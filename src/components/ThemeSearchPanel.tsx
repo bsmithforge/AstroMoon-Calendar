@@ -251,7 +251,6 @@ const ThemeResult: React.FC<{
     <p className="font-serif-almanac text-xl text-[#182421]">{targetLabel(match.target, hemisphere)}</p>
     <p className="mt-1 font-serif-almanac text-[17px] italic leading-relaxed text-[#4F5A51]">
       “{match.entry.text}”
-      <span className="ml-1.5 whitespace-nowrap font-sans-almanac text-[10.5px] not-italic tracking-wide text-[#8A8471]">traditional</span>
     </p>
     <div className="mt-1">
       {runs === null ? (

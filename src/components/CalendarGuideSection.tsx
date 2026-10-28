@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
+  Feather,
 } from 'lucide-react';
 
 interface GuideItem {
@@ -50,6 +51,14 @@ const GUIDE_ITEMS: GuideItem[] = [
     details:
       'Subscribe adds an auto-updating calendar with no download: use the separate Subscribe button, then tap Apple/Outlook to open your calendar app’s subscribe dialog, use the Google Calendar or Outlook.com links, or copy the feed URL into any app that supports calendar subscriptions. Export creates one-time files that will not update. Choose an ICS calendar, a calendar PDF with one whole month per A4 page (up to 24 months), or a data table for your exact date range. Calendar PDFs include every month touched by your range. Export settings apply only to the download, so you can adjust them without changing the calendar on screen.',
     icon: <Download className="w-4 h-4 text-[#B44732]" />,
+  },
+  {
+    id: 'ask-almanac',
+    question: 'Can I ask the almanac a question?',
+    shortAnswer: 'Yes. Open Ask and type a question, such as “When is the next full moon in Scorpio?”',
+    details:
+      'An AI model chooses what to look up and words the reply, but every date, time, and sign comes from AstroMoon’s own calculations, and you can see how each answer was found. You can also describe a printable calendar or .ics file to have the export form filled in for you, or search the traditional sign and phase themes privately on your device. See the AI tab under How we calculate (Learn menu) for details.',
+    icon: <Feather className="w-4 h-4 text-[#B89A62]" />,
   },
   {
     id: 'hemisphere-toggle',

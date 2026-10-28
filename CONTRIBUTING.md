@@ -9,21 +9,22 @@ npm ci
 npm run dev
 ```
 
-Node 20+ and npm. No API keys or `.env` file are needed.
+Node 20+ and npm. No API keys or `.env` file are needed. Without them, everything works except Ask the Almanac, which says it isn't available; theme search runs on your device either way. To try Ask locally, copy `.env.example` to `.env.local` and add free-tier keys (see [docs/ai-evals.md](docs/ai-evals.md)); never commit them or prefix them with `VITE_`.
 
 ## Before opening a pull request
 
 ```
 npm run lint    # tsc --noEmit
-npm test        # ICS serialization, feed contract, function runtime
-npm run build   # static app + bundled feed function
+npm test        # ICS, feed, function runtime, almanac tools, Ask loop, export drafts, theme search
+npm run build   # static app + bundled API functions
 ```
 
-CI runs the same three commands. [AGENTS.md](AGENTS.md) documents the code map, domain rules (timezones, ingress boundaries, export limits), design tokens, and the hosting constraints that are easy to break by accident — read the relevant section before touching astronomy, exports, or `api/`.
+CI runs the same three commands. Changes to the AI features also have manual evals: `npm run eval:ask` (needs keys, spends free quota) and `npm run eval:themes` (needs transformers.js installed outside the project; see the script). [AGENTS.md](AGENTS.md) documents the code map, domain rules (timezones, ingress boundaries, export limits), design tokens, and the hosting constraints that are easy to break by accident — read the relevant section before touching astronomy, exports, or `api/`.
 
 ## What makes a good change
 
 - Keep calculations in the browser. Don't add databases, paid APIs, or background services.
+- The AI never supplies a date or writes into an export: see "AI features: rules to preserve" in [AGENTS.md](AGENTS.md).
 - Exports (ICS, feed, PDF) are the core feature. Verify generated files, not just that a download fired.
 - Everything must work on a phone. Check 320–430 px widths for UI changes.
 - Accuracy claims need a reference. If you change benchmark data or methodology copy, cite the source and its time scale.

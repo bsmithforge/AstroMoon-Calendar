@@ -119,6 +119,17 @@ When changing export behavior:
 - Keep capture memory bounded. The current implementation retains every month's PNG until PDF assembly; do not raise range/resolution limits or parallelize all captures without evaluating phone memory and responsiveness. Off-screen content must remain renderable for capture while staying out of the interactive/accessibility flow.
 - Keep generation state, duplicate-click protection, recoverable errors, and cleanup dependable. A success message after initiating a browser download is not proof that the user saved or imported the file. Verify actual file delivery when changing Blob URLs, asynchronous PDF actions, or download handling.
 
+## AI features: rules to preserve
+
+Three features use AI: Ask the Almanac (`/api/ask`), export drafts (Ask's `prepare_export`), and on-device theme search. The design, phases, and decisions are in `docs/ai-features-plan.md`; provider and model evals are in `docs/ai-evals.md`.
+
+- **The model never writes timestamps.** Facts come only from the deterministic tools in `src/utils/almanacTools.ts`. Answers cite events as `{{event:<id>}}` tokens that `server/ai/ask.ts` checks against the tool results; a date, time, year, month, or weekday the model writes itself (and the user didn't type) gets one correction, then a templated list. The browser renders every date and time from engine event views, never from model text.
+- **Exports stay free of AI text.** `prepare_export` returns settings, never a file or wording; the export dialog builds ICS and PDFs from those settings exactly as it does from settings entered by hand (a test checks identical records and ICS bytes), and the user still taps to download. Model output never reaches an exported file.
+- **Keys stay on the server.** Provider settings are `AI_*` environment variables read by the function; never prefix them with `VITE_`. CI and tests use scripted models and fake `fetch`, and never need a key.
+- **Changing tools or the prompt:** keep tool arguments validated before any search runs, add unit tests, update `evals/ask-questions.json` when behaviour changes, and rerun `npm run eval:ask` against each configured provider before relying on a prompt change. Provider changes are configuration; record them and their data terms in `docs/ai-evals.md`, including regional limits such as `AI_FALLBACK_EXCLUDED_COUNTRIES`.
+- **Free-tier budget:** no billing on provider accounts. Keep the handler's limits (400-character questions, 4 tool rounds, bounded tokens and ranges) and the "resting" state when quota runs out; the WAF rate-limit rule on `/api/ask` is configured in Vercel, not in code.
+- **Theme search stays on the device.** Its corpus is the app's own sign and phase copy; queries never leave the browser; the model loads in a Web Worker, only after the user's first theme search (its size is stated next to the prompt). Run `npm run eval:themes` after changing the corpus, ranking, or model.
+
 ## Full mobile compatibility
 
 Mobile is a required first-class experience across navigation, all views, filters, date/timezone inputs, every modal, and all export paths. Keep the feature set available on phones; hiding a control is not a mobile fix.
