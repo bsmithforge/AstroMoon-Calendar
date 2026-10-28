@@ -146,3 +146,50 @@ Sources: [Groq: Your data](https://console.groq.com/docs/your-data), [Groq Servi
 | unsupported-void-of-course | – | – | ✓ | model | 0 | 913 | tools: none |
 
 </details>
+
+## Theme search: on-device embeddings (2026-10-28)
+
+### Setup
+
+- **Model:** `Xenova/all-MiniLM-L6-v2`, quantized (q8), run in the browser by transformers.js 4.3.1 in a Web Worker.
+- **Corpus:** 68 short texts from AstroMoon's own traditional interpretations, in `src/utils/themeCorpus.ts`. For each sign, its theme and description plus each suggested activity; for each phase, its meaning.
+- **Ranking:** each sign or phase scores by its best-matching entry. Up to three results are shown, and only above a 0.3 cosine-similarity floor.
+- **Upcoming days:** a result lists the days in the next 90 whose noon sign, or day phase, matches.
+
+### Results
+
+`npm run eval:themes` runs the 16 queries in [`evals/theme-queries.json`](../evals/theme-queries.json) through the same corpus and ranking in Node. A query passes when one of its expected signs or phases is in the top three. Expected answers were written from the copy before the run.
+
+**16/16 passed.** Examples:
+
+| Query | Top matches |
+| --- | --- |
+| plan a hiking trip | Sagittarius 0.88 |
+| review my budget | Taurus 0.74 |
+| a hard, honest conversation with my partner | Scorpio 0.66, Sagittarius 0.36, Waning Gibbous 0.35 |
+| learn a new language | Gemini 0.58, Sagittarius 0.38 |
+| cook dinner for my family | Cancer 0.52, Taurus 0.39, Virgo 0.38 |
+| forgive someone and move on | Third Quarter 0.43, Pisces 0.30 |
+| starting a new business | New Moon 0.36, Gemini 0.35, Aries 0.34 |
+| what is the capital of France | no match |
+| quantum chromodynamics | no match |
+
+Broad queries score lower ("starting a new business" tops out at 0.36), so the 0.3 floor is close to the edge for them.
+
+### Download and speed
+
+Measured in Chromium and Playwright's WebKit on a desktop machine:
+
+| | Measured |
+| --- | --- |
+| One-time download | 28.8 MB: model 23.0 MB, WebAssembly runtime ~5 MB, tokenizer 0.2 MB, library 0.13 MB |
+| Model ready after download | ~2 s |
+| Embedding the 68-entry corpus | ~2 s on the first call, in the worker (the page stays responsive) |
+| Each search | well under a second |
+| Offline | Once the model is cached, a page loaded online keeps working with no network: the model comes from Cache Storage, and the library, runtime and worker from the HTTP cache. Tested against the production build served with Vercel-style immutable cache headers. |
+
+**Not yet measured on a real phone.** A phone's CPU is several times slower, so expect longer than 2 s to build the index.
+
+### Why the library loads from jsDelivr
+
+The npm package `@huggingface/transformers@4.3.1` depends on `onnxruntime-node` and `sharp`. Installing it adds ~480 MB of native Node binaries to every CI and Vercel install, and the browser never uses them. The browser build also fetches its WebAssembly runtime from jsDelivr either way. So the app imports the exact pinned version from `https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/+esm`. jsDelivr's `+esm` build rewrites the library's bare imports to pinned URLs; the plain `dist` file fails in browsers on `import 'onnxruntime-web/webgpu'`.
