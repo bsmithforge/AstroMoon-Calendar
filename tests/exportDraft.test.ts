@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { toModelResult } from '../src/utils/almanacResults';
 import { AlmanacContext, AlmanacToolResult, runAlmanacTool } from '../src/utils/almanacTools';
-import { filterAstroRecords, generateRangeDataset } from '../src/utils/astronomy';
+import { filterAstroRecords, generateRangeDataset, includesQuarter } from '../src/utils/astronomy';
 import {
   describeExportEvents,
   describeExportRange,
   ExportDraft,
   getExportDraftError,
   getExportRecords,
+  toExportFilters,
 } from '../src/utils/exportDraft';
 import { generateIcsPayload } from '../src/utils/icsExport';
 import { FilterSettings } from '../src/types';
@@ -35,6 +36,7 @@ test('prepare_export resolves a year, whole months, or explicit dates', () => {
     timezone: 'America/Halifax',
     hemisphere: 'northern',
     includeMajorPhases: true,
+    quarterPhases: 'all',
     includeIngresses: true,
     includeDailySigns: true,
     includeEclipses: true,
@@ -84,7 +86,7 @@ test('prepare_export rejects unclear ranges and each format’s own limits befor
 });
 
 test('ICS and table drafts need an event type; calendar PDFs can be grids alone', () => {
-  const none = { startDate: '2027-01-01', endDate: '2027-01-31', timezone: 'UTC', hemisphere: 'northern' as const, includeMajorPhases: false, includeIngresses: false, includeDailySigns: false, includeEclipses: false };
+  const none = { startDate: '2027-01-01', endDate: '2027-01-31', timezone: 'UTC', hemisphere: 'northern' as const, includeMajorPhases: false, quarterPhases: 'all' as const, includeIngresses: false, includeDailySigns: false, includeEclipses: false };
   assert.equal(getExportDraftError({ ...none, format: 'calendar_pdf' }), null);
   assert.match(getExportDraftError({ ...none, format: 'ics' })!, /at least one event type/);
   assert.match(getExportDraftError({ ...none, format: 'table_pdf' })!, /at least one event type/);
@@ -117,6 +119,30 @@ test('a draft exports exactly what the same settings entered by hand export', ()
     generateIcsPayload(draftRecords, 'AstroMoon', tokyo.timezone, tokyo.hemisphere),
     generateIcsPayload(handRecords, 'AstroMoon', byHand.timezone, byHand.hemisphere)
   );
+});
+
+test('New & Full exports keep only those phases, in records and in the calendar filter', () => {
+  const newFull = draft({ format: 'ics', year: 2027, include: ['new_and_full_moons', 'eclipses'] });
+  assert.equal(newFull.includeMajorPhases, true);
+  assert.equal(newFull.quarterPhases, 'newAndFull');
+  const all = draft({ format: 'ics', year: 2027, include: ['moon_phases', 'new_and_full_moons', 'eclipses'] });
+  assert.equal(all.quarterPhases, 'all', 'all four phases win when both are asked for');
+
+  const quarters = (settings: ExportDraft) => getExportRecords(settings).filter((r) => r.eventType === 'quarter');
+  const types = new Set(quarters(newFull).map((r) => r.metadata.quarterType));
+  assert.deepEqual([...types].sort(), ['Full Moon', 'New Moon']);
+  assert.equal(quarters(newFull).length, quarters(all).filter((r) => r.metadata.quarterType === 'New Moon' || r.metadata.quarterType === 'Full Moon').length);
+  assert.equal(getExportRecords(newFull).filter((r) => r.eventType === 'eclipse').length, getExportRecords(all).filter((r) => r.eventType === 'eclipse').length);
+
+  // The calendar grid (and so the calendar PDF) reads the same filter.
+  const filters = toExportFilters(newFull);
+  assert.equal(includesQuarter(filters, 'Full Moon'), true);
+  assert.equal(includesQuarter(filters, 'First Quarter'), false);
+  assert.equal(includesQuarter({ ...filters, quarterPhases: undefined }, 'First Quarter'), true, 'the main calendar is unaffected');
+  assert.equal(includesQuarter({ ...filters, showFullNewMoon: false }, 'Full Moon'), false);
+
+  assert.equal(describeExportEvents(newFull), 'New & Full Moons, Eclipses');
+  assert.deepEqual((toModelResult(runAlmanacTool('prepare_export', { format: 'ics', year: 2027, include: ['new_and_full_moons'] }, ctx)) as { export_draft: { include: string[] } }).export_draft.include, ['new_and_full_moons']);
 });
 
 test('getExportRecords refuses ranges over the record-export limit', () => {

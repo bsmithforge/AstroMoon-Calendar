@@ -83,7 +83,7 @@ The app is deployed on **Vercel** (Vite preset; static `dist/` plus serverless f
 - Zodiac positions use twelve equal 30-degree tropical sectors, with Aries at 0 degrees. Preserve normalization to `[0, 360)` and the Pisces-to-Aries wraparound. Ingress bisection narrows the bracket to at most one second; that numerical precision is not proof of empirical accuracy.
 - Hemisphere selection changes Moon presentation, not the event instant, longitude, or illumination fraction. Check SVGs and emoji/text representations when modifying it.
 - Eclipse records represent global peaks, separate from new/full Moon instants. Keep global occurrence distinct from local visibility. Label astrological themes as traditional interpretations.
-- Despite its name, `showFullNewMoon` controls **all four primary quarters** in the shared record filter. Preserve consistent toggle semantics across consumers when changing filters.
+- Despite its name, `showFullNewMoon` controls **all four primary quarters** in the shared record filter. Exports can narrow it with the optional `quarterPhases: 'newAndFull'` (the export dialog's "New & Full only", Ask's `new_and_full_moons`); the main calendar and subscription feed never set it. Check quarters through `includesQuarter()`, which `filterAstroRecords()`, `CalendarGrid`, and `TimelineView` share. Preserve consistent toggle semantics across consumers when changing filters.
 - Keep calculations deterministic for their supplied dates/timezone and avoid adding expensive event searches inside per-cell rendering. Range generation is synchronous and can be costly for long intervals.
 
 ## Exports: primary product workflow

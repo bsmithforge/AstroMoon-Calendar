@@ -747,6 +747,12 @@ export function generateRangeDataset(
  * Filter unified astronomical records according to user toggle settings.
  * Single source of truth for Calendar, Timeline, ICS, and PDF.
  */
+/** Whether the filters show an exact quarter of this type: all four, or only New and Full when an export asks. */
+export function includesQuarter(filters: FilterSettings, quarterType: string | undefined): boolean {
+  if (!filters.showFullNewMoon) return false;
+  return filters.quarterPhases !== 'newAndFull' || quarterType === 'New Moon' || quarterType === 'Full Moon';
+}
+
 export function filterAstroRecords(
   records: AstroRecord[],
   filters: FilterSettings
@@ -754,7 +760,7 @@ export function filterAstroRecords(
   return records.filter((rec) => {
     // 1. Quarters
     if (rec.eventType === 'quarter') {
-      return filters.showFullNewMoon;
+      return includesQuarter(filters, rec.metadata.quarterType);
     }
     // 2. Ingresses
     if (rec.eventType === 'ingress') {

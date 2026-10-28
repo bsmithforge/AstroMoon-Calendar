@@ -7,7 +7,7 @@ import {
   AlertCircle,
   Feather,
 } from 'lucide-react';
-import { FilterSettings } from '../types';
+import { FilterSettings, QuarterPhaseSelection } from '../types';
 import { generateMonthData } from '../utils/astronomy';
 import {
   countMonthsSpanned,
@@ -73,6 +73,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
     draft?.includeDailySigns ?? filters.showDailySigns
   );
   const [includeEclipses, setIncludeEclipses] = useState(draft?.includeEclipses ?? filters.showEclipses);
+  const [quarterPhases, setQuarterPhases] = useState<QuarterPhaseSelection>(draft?.quarterPhases ?? 'all');
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
 
   // Quick preset ranges keyed to user's active year & month
@@ -124,6 +125,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
       startDate,
       endDate,
       showFullNewMoon: includeMajorPhases,
+      quarterPhases,
       showIngresses: includeIngresses,
       showDailySigns: includeDailySigns,
       showEclipses: includeEclipses,
@@ -135,6 +137,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
       startDate,
       endDate,
       includeMajorPhases,
+      quarterPhases,
       includeIngresses,
       includeDailySigns,
       includeEclipses,
@@ -210,6 +213,7 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
       timezone,
       hemisphere,
       includeMajorPhases,
+      quarterPhases,
       includeIngresses,
       includeDailySigns,
       includeEclipses,
@@ -532,6 +536,29 @@ const ExportModalContent: React.FC<ExportModalProps> = ({
                 <span>Global Solar &amp; Lunar Eclipses</span>
               </label>
             </div>
+
+            {includeMajorPhases && (
+              <div className="flex flex-wrap items-center gap-2 text-xs [&_button]:min-h-11">
+                <span id="export-phase-choice-label" className="text-[#5F6D61] font-medium">Moon phases:</span>
+                <div role="group" aria-labelledby="export-phase-choice-label" className="grid min-w-0 flex-1 grid-cols-2 rounded-md border border-[#D8D0BF] bg-[#FAF6EE] p-0.5 shadow-xs min-[375px]:flex-none">
+                  {([['all', 'All four'], ['newAndFull', 'New & Full only']] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={quarterPhases === value}
+                      onClick={() => setQuarterPhases(value)}
+                      className={`min-w-0 px-2.5 py-1 rounded font-medium transition ${
+                        quarterPhases === value
+                          ? 'bg-[#182421] text-[#F3EDDF] shadow-xs'
+                          : 'text-[#5F6D61] hover:text-[#182421]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Success Notification */}
